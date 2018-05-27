@@ -13,7 +13,7 @@ data/
 build/
 develop-eggs/
 dist/
-.idea/
+source/.idea/
 downloads/
 eggs/
 .eggs/
