@@ -19,7 +19,7 @@ class TweetDataSet(Dataset):
 
     def __getitem__(self, idx):
         tweet_instance = self.data[idx]
-        tweet_text = tweet_instance['text']
+        tweet_text = tweet_instance['text'].replace('\n', ' ').replace('\r', '')
         vectorized_representation = np.array(10)
         if self.transform is not None:
             tweet_text = self.transform(tweet_text)

@@ -74,6 +74,7 @@ class word2vec:
 
     def get_sentence_vector(self, sentence):
         featureVec = np.zeros((1,300))
+        #return featureVec, "clean_sentence"
         nwords = 0
         clean_sentence = self.clean_sent(self.wordnet_lemmatizer, sentence)
         model = self.get_model()
@@ -90,7 +91,7 @@ class word2vec:
                 pass #Swallow exception
         if (nwords > 0):
             featureVec = np.divide(featureVec, nwords)
-        return featureVec
+        return featureVec, clean_sentence
 
     def get_sentence_matrix(self, sentence):
         sentence_matrix = []
@@ -163,7 +164,7 @@ class word2vec:
 if __name__ == "__main__":
     sentence = "Gala Bingo clubs bought for 241m: The UK's largest High Street bingo operator, Gala, is being taken over by_ https://t.co/HzeeykJUd3"
     wv = word2vec()
-    clean_sentence = wv.clean_sent(wv.wordnet_lemmatizer,sentence)
+    clean_sentence = sentence#wv.clean_sent(wv.wordnet_lemmatizer,sentence)
     print(clean_sentence)
     sentence_matrix = wv.get_sentence_matrix(clean_sentence)
     print(sentence_matrix.shape)
