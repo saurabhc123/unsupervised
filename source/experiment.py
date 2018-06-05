@@ -31,11 +31,17 @@ class Experiment():
     def perform_experiment(self):
         print ("Performing experiment:" , self.name)
         tweets = []
+        tweets_dict = set()
         sentence_vectors = []
         wv = self.embedding_generator
         for data in self.dataloader:
             tweet = Tweet(data)
-            sentence_vector, clean_text = wv.get_sentence_vector(tweet.tweet_text)
+            clean_text = self.preprocessor.process_tweet(tweet.tweet_text)
+            sentence_vector, _ = wv.get_sentence_vector(clean_text)
+            if clean_text not in tweets_dict:
+                tweets_dict.add(clean_text)
+            else:
+                continue
             tweet.set_clean_text(clean_text)
             tweets.append(tweet)
             sentence_vectors.append(sentence_vector)

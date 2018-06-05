@@ -76,7 +76,7 @@ class word2vec:
         featureVec = np.zeros((1,300))
         #return featureVec, "clean_sentence"
         nwords = 0
-        clean_sentence = self.clean_sent(self.wordnet_lemmatizer, sentence)
+        clean_sentence = sentence#self.clean_sent(self.wordnet_lemmatizer, sentence)
         model = self.get_model()
         words = clean_sentence.rstrip().split(" ")
         if(len(words) == 0):
