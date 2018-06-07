@@ -6,6 +6,6 @@ class Clusterer(ABC):
         self.name = name
 
     @abstractmethod
-    def perform_clustering(self, data):
+    def perform_clustering(self, data, parameters):
         print("Clustering performed by:" + self.name)
         pass

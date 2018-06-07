@@ -8,12 +8,17 @@ class DBScanClusterer(clusterer.Clusterer):
     kilometers = miles / 0.621371
     eps = kilometers / 10
 
-    def __init__(self):
+    def __init__(self, eps):
         clusterer.Clusterer.__init__(self, "DBScan")
+        if eps != 0:
+            self.eps = eps
+        print("EPS:" + str(self.eps))
 
-    def perform_clustering(self, data):
-        clusterer.Clusterer.perform_clustering(self, data)
+
+    def perform_clustering(self, data, parameters):
+        clusterer.Clusterer.perform_clustering(self, data, parameters)
         dbscan = DBSCAN(eps=self.eps, min_samples=10)
         labels = dbscan.fit_predict(data)
-        print ("Number of unique labels:" + str(len(np.unique(labels))))
+        print ("Number of unique labels:" + str(len(np.unique(labels))) )
+        parameters.add_parameter("Unique_Labels", str(len(np.unique(labels))))
         return labels

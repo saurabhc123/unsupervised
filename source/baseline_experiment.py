@@ -14,34 +14,52 @@ import csv
 import time
 from experiment import Experiment
 from data_processors.noise_remover import  NoiseRemover
+from parameters import Parameters
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
 fileName = 'Dataset_z_42_tweets.json'
-exports_filename = 'clustering_' + fileName + "_"+ time.strftime("%Y%m%d-%H%M%S") + '.csv'
+
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)
-exports_filepath = os.path.join(exports_folder,exports_filename)
+
 
 dataset = TweetDataSet(datafolder, fileName)
 dataloader = DataLoader(dataset, batch_size=1)
 pre_processor = NoiseRemover()
 
+
 class Baseline_Experiment(Experiment):
-    def __init__(self, name="Baseline experiment"):
-        clusterer = DBScan.DBScanClusterer()
+    parameters = Parameters()
+
+    def __init__(self, name="Baseline experiment", eps = 0):
+        self.timestamp = time.strftime("%Y%m%d-%H%M%S")
+        exports_filename = 'clustering_' + fileName + "_"+ self.timestamp + '.csv'
+        exports_filepath = os.path.join(exports_folder,exports_filename)
+        clusterer = DBScan.DBScanClusterer(eps)
         embedding_generator = word2vec.word2vec()
-        Experiment.__init__(self, name, dataloader, pre_processor, embedding_generator, clusterer, exports_filepath)
+        self.parameters.add_parameter("Input_File_Name", fileName)
+        self.parameters.add_parameter("Clusterer", "DBScan")
+        self.parameters.add_parameter("eps", eps)
+        self.parameters.add_parameter("Embedding", "word2vec")
+        Experiment.__init__(self, name, dataloader, pre_processor, embedding_generator, clusterer, exports_filepath, self.parameters)
 
     def perform_experiment(self):
         Experiment.perform_experiment(self)
+        self.parameters.write_parameters(exports_folder, self.timestamp)
         print("Experiment complete")
 
 
 
 
-experiment = Baseline_Experiment()
-experiment.perform_experiment()
+experiment_count = 10
+miles = .75
+kilometers = miles / 0.621371
+eps = kilometers / 1000
+for i in range(experiment_count):
+    eps = eps*5
+    experiment = Baseline_Experiment(eps = eps)
+    experiment.perform_experiment()
 
 
 # for i in range(50):

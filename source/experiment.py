@@ -14,10 +14,14 @@ from clustering import clusterer
 import numpy as np
 import csv
 import time
+from parameters import Parameters
 
 
 class Experiment():
-    def __init__(self, name, dataloader, preprocesor, embedding_generator, clusterer, exports_filepath):
+
+
+
+    def __init__(self, name, dataloader, preprocesor, embedding_generator, clusterer, exports_filepath, parameters):
         self.name = name
         self.data = dataloader
         self.preprocessor = preprocesor
@@ -25,6 +29,7 @@ class Experiment():
         self.clusterer = clusterer
         self.exports_filepath = exports_filepath
         self.dataloader = dataloader
+        self.parameters = parameters
         pass
 
 
@@ -51,8 +56,7 @@ class Experiment():
         sentence_vectors = np.array(sentence_vectors).reshape(-1,300)
         print (sentence_vectors.shape)
 
-        clusterer = DBScan.DBScanClusterer()
-        labels = clusterer.perform_clustering(sentence_vectors)
+        labels = self.clusterer.perform_clustering(sentence_vectors, self.parameters)
         i = 0
 
         with open(self.exports_filepath,'w') as out:
@@ -63,3 +67,4 @@ class Experiment():
                 csv_out.writerow([tweet.label, tweet.clean_text, tweet.tweet_text])
                 i += 1
                 pass
+
