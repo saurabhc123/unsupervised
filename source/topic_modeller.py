@@ -177,7 +177,7 @@ def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, s
 
 
 
-model = get_mallet_lda_model(corpus, id2word)
+model = get_mallet_lda_model(corpus, id2word, num_topics=90)
 #model = get_generic_lda_model(corpus, id2word)
 
 #show_model_statistics(model, True)
@@ -196,9 +196,59 @@ def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
     plt.legend(("coherence_values"), loc='best')
     plt.show()
 
-find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+#find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+
+def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
+    # Init output
+    sent_topics_df = pd.DataFrame()
+    topics = []
+
+    # Get main topic in each document
+    for i, row in enumerate(ldamodel[corpus]):
+        row = sorted(row, key=lambda x: (x[1]), reverse=True)
+        # Get the Dominant topic, Perc Contribution and Keywords for each document
+        for j, (topic_num, prop_topic) in enumerate(row):
+            if j == 0:  # => dominant topic
+                wp = ldamodel.show_topic(topic_num)
+                topic_keywords = ", ".join([word for word, prop in wp])
+                sent_topics_df = sent_topics_df.append(pd.Series([int(topic_num), round(prop_topic,4), topic_keywords]), ignore_index=True)
+                topics.append(int(topic_num))
+            else:
+                break
+    sent_topics_df.columns = ['Dominant_Topic', 'Perc_Contribution', 'Topic_Keywords']
+
+    # Add original text to the end of the output
+    contents = pd.Series(texts)
+    sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
+    return sent_topics_df, topics
 
 
+df_topic_sents_keywords , topics= format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
+
+# Format
+df_dominant_topic = df_topic_sents_keywords.reset_index()
+
+
+exports_folder = 'data/exports/'
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+exports_filename = 'clustering_' + fileName + "_"+ timestamp + '.csv'
+exports_filepath = os.path.join(exports_folder,exports_filename)
+i=0
+
+with open(exports_filepath,'w') as out:
+    csv_out=csv.writer(out, delimiter = '|')
+    csv_out.writerow(['label' , 'tweet_text'])
+    for tweet in tweets:
+        tweet.set_label(topics[i])
+        csv_out.writerow([tweet.label, tweet.clean_text, tweet.tweet_text])
+        i += 1
+        pass
+
+#df_dominant_topic.columns = ['Document_No', 'Dominant_Topic', 'Topic_Perc_Contrib', 'Keywords', 'Text']
+
+#df_dominant_topic.columns[""]
+# Show
+#df_dominant_topic.head(10)
 
 
 
