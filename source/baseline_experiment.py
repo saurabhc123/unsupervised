@@ -18,7 +18,7 @@ from parameters import Parameters
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_42_tweets.json'
+fileName = 'Dataset_z_1024_tweets.json'
 
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)

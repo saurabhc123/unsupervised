@@ -1,6 +1,14 @@
 import re
+import string
+
+
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
 
 class NoiseRemover:
+
+    stop = set(stopwords.words('english'))
+    wordnet_lemmatizer = WordNetLemmatizer()
 
     def __init__(self):
         self.transformers = []
@@ -28,6 +36,7 @@ class NoiseRemover:
         tweet = tweet.lower()
         tweet = re.sub(r'https?:\/\/.*[\r\n]*', ' ', tweet, flags=re.MULTILINE)
         tweet = re.sub(r'[Rr][tT][ ]?@[a-z0-9]*', ' ', tweet, flags=re.MULTILINE)
+        tweet = re.sub(r'[#][a-z0-9A-Z]*', ' ', tweet, flags=re.MULTILINE)
         tweet = re.sub(r'@[a-z0-9]*', ' ', tweet, flags=re.MULTILINE)
         tweet = re.sub(r'[_"\-;%()|.,+&=*%]', '', tweet)
         tweet = re.sub(r'\.', ' . ', tweet)
@@ -43,4 +52,21 @@ class NoiseRemover:
         tweet = re.sub(r' .  .  . ', ' ', tweet)
         tweet = re.sub(r' ! ! ', ' ! ', tweet)
         tweet = re.sub(r'&amp', 'and', tweet)
+        tweet = self.clean_sent(tweet)
         return tweet
+
+    def clean_sent(self, sent):
+        lem = self.wordnet_lemmatizer
+        words = sent.replace(","," ").replace(";", " ").replace("#"," ").replace(":", " ").replace("@", " ").split()
+        filtered_words = filter(lambda word: word.isalpha() and len(word) > 1 and word != "http" and word != "rt", [self.full_pipeline(lem, word) for word in words])
+        return ' '.join(self.filter_stopwords(filtered_words))
+
+    def filter_stopwords(self, words):
+        return filter(lambda word: word not in self.stop, words)
+
+    def full_pipeline(self, lem, word):
+        word = word.lower()
+        word = word.translate(string.punctuation)
+        for val in ['a', 'v', 'n']:
+            word = lem.lemmatize(word, pos=val)
+        return word
