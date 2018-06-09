@@ -113,10 +113,10 @@ print ([[(id2word[id], freq) for id, freq in cp] for cp in corpus[:3]])
 
 
 #Build LDA model
-def get_generic_lda_model(corpus, id2word):
+def get_generic_lda_model(corpus, id2word, num_topics=20):
     lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
                                                id2word=id2word,
-                                               num_topics=20,
+                                               num_topics=num_topics,
                                                random_state=100,
                                                update_every=1,
                                                chunksize=100,
@@ -130,9 +130,9 @@ def get_generic_lda_model(corpus, id2word):
     doc_lda = lda_model[corpus]
     return lda_model
 
-def get_mallet_lda_model(corpus,id2word):
+def get_mallet_lda_model(corpus, id2word, num_topics=20):
     mallet_path = 'source/mallet-2.0.8/bin/mallet' # update this path
-    ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=20, id2word=id2word)
+    ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=num_topics, id2word=id2word)
     return ldamallet
 
 def show_model_statistics(lda_model, with_visualization=False):
@@ -148,7 +148,7 @@ def show_model_statistics(lda_model, with_visualization=False):
         vis = pyLDAvis.gensim.prepare(lda_model, corpus, id2word)
         pyLDAvis.show(vis)
 
-def compute_coherence_values(dictionary, corpus, texts, limit, start=2, step=3):
+def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, step=3):
     """
     Compute c_v coherence for various number of topics
 
@@ -167,7 +167,8 @@ def compute_coherence_values(dictionary, corpus, texts, limit, start=2, step=3):
     coherence_values = []
     model_list = []
     for num_topics in range(start, limit, step):
-        model = get_mallet_lda_model(corpus, id2word)
+        model = get_mallet_lda_model(corpus, id2word, num_topics=num_topics)
+        #model.num_topics = num_topics
         model_list.append(model)
         coherencemodel = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
         coherence_values.append(coherencemodel.get_coherence())
@@ -176,10 +177,28 @@ def compute_coherence_values(dictionary, corpus, texts, limit, start=2, step=3):
 
 
 
-#model = get_mallet_lda_model(corpus, id2word)
+model = get_mallet_lda_model(corpus, id2word)
 #model = get_generic_lda_model(corpus, id2word)
 
 #show_model_statistics(model, True)
+
+def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
+    # Can take a long time to run.
+    model_list, coherence_values = compute_coherence_values(dictionary=id2word, corpus=corpus,
+                                                            texts=data_lemmatized, model=model, start=60, limit=86, step=6)
+
+    # Show graph
+    limit=86; start=60; step=6;
+    x = range(start, limit, step)
+    plt.plot(x, coherence_values)
+    plt.xlabel("Num Topics")
+    plt.ylabel("Coherence score")
+    plt.legend(("coherence_values"), loc='best')
+    plt.show()
+
+find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+
+
 
 
 
