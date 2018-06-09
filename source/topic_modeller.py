@@ -111,39 +111,75 @@ print(corpus[:3])
 # Human readable format of corpus (term-frequency)
 print ([[(id2word[id], freq) for id, freq in cp] for cp in corpus[:3]])
 
+
 #Build LDA model
-lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
-                                           id2word=id2word,
-                                           num_topics=20,
-                                           random_state=100,
-                                           update_every=1,
-                                           chunksize=100,
-                                           passes=10,
-                                           alpha='auto',
-                                           eta='auto',
-                                           per_word_topics=True)
+def get_generic_lda_model(corpus, id2word):
+    lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
+                                               id2word=id2word,
+                                               num_topics=20,
+                                               random_state=100,
+                                               update_every=1,
+                                               chunksize=100,
+                                               passes=10,
+                                               alpha='auto',
+                                               eta='auto',
+                                               per_word_topics=True)
 
-# Print the Keyword in the 10 topics
-pprint(lda_model.print_topics())
-doc_lda = lda_model[corpus]
+    # Print the Keyword in the 10 topics
+    pprint(lda_model.print_topics())
+    doc_lda = lda_model[corpus]
+    return lda_model
+
+def get_mallet_lda_model(corpus,id2word):
+    mallet_path = 'source/mallet-2.0.8/bin/mallet' # update this path
+    ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=20, id2word=id2word)
+    return ldamallet
+
+def show_model_statistics(lda_model, with_visualization=False):
+    # Compute Perplexity
+    #print('\nPerplexity: ', lda_model.log_perplexity(corpus))  # a measure of how good the model is. lower the better.
+    # Compute Coherence Score
+    coherence_model_lda = CoherenceModel(model=lda_model, texts=data_lemmatized, dictionary=id2word, coherence='c_v')
+    coherence_lda = coherence_model_lda.get_coherence()
+    print('\nCoherence Score: ', coherence_lda)
+    # Visualize the topics
+    # pyLDAvis.enable_notebook()
+    if with_visualization:
+        vis = pyLDAvis.gensim.prepare(lda_model, corpus, id2word)
+        pyLDAvis.show(vis)
+
+def compute_coherence_values(dictionary, corpus, texts, limit, start=2, step=3):
+    """
+    Compute c_v coherence for various number of topics
+
+    Parameters:
+    ----------
+    dictionary : Gensim dictionary
+    corpus : Gensim corpus
+    texts : List of input texts
+    limit : Max num of topics
+
+    Returns:
+    -------
+    model_list : List of LDA topic models
+    coherence_values : Coherence values corresponding to the LDA model with respective number of topics
+    """
+    coherence_values = []
+    model_list = []
+    for num_topics in range(start, limit, step):
+        model = get_mallet_lda_model(corpus, id2word)
+        model_list.append(model)
+        coherencemodel = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
+        coherence_values.append(coherencemodel.get_coherence())
+
+    return model_list, coherence_values
 
 
-#mallet_path = 'source/mallet-2.0.8/bin/mallet' # update this path
-#ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=20, id2word=id2word)
 
+#model = get_mallet_lda_model(corpus, id2word)
+#model = get_generic_lda_model(corpus, id2word)
 
-# Compute Perplexity
-print('\nPerplexity: ', lda_model.log_perplexity(corpus))  # a measure of how good the model is. lower the better.
-
-# Compute Coherence Score
-coherence_model_lda = CoherenceModel(model=lda_model, texts=data_lemmatized, dictionary=id2word, coherence='c_v')
-coherence_lda = coherence_model_lda.get_coherence()
-print('\nCoherence Score: ', coherence_lda)
-
-# Visualize the topics
-#pyLDAvis.enable_notebook()
-vis = pyLDAvis.gensim.prepare(lda_model, corpus, id2word)
-pyLDAvis.show(vis)
+#show_model_statistics(model, True)
 
 
 
