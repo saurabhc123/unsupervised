@@ -202,7 +202,7 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Init output
     sent_topics_df = pd.DataFrame()
     topics = []
-
+    keywords = {}
     # Get main topic in each document
     for i, row in enumerate(ldamodel[corpus]):
         row = sorted(row, key=lambda x: (x[1]), reverse=True)
@@ -213,6 +213,7 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
                 topic_keywords = ", ".join([word for word, prop in wp])
                 sent_topics_df = sent_topics_df.append(pd.Series([int(topic_num), round(prop_topic,4), topic_keywords]), ignore_index=True)
                 topics.append(int(topic_num))
+                keywords[int(topic_num)] = topic_keywords
             else:
                 break
     sent_topics_df.columns = ['Dominant_Topic', 'Perc_Contribution', 'Topic_Keywords']
@@ -220,10 +221,10 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Add original text to the end of the output
     contents = pd.Series(texts)
     sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
-    return sent_topics_df, topics
+    return sent_topics_df, topics, keywords
 
 
-df_topic_sents_keywords , topics= format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
+df_topic_sents_keywords , topics, keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
 
 # Format
 df_dominant_topic = df_topic_sents_keywords.reset_index()
@@ -237,10 +238,10 @@ i=0
 
 with open(exports_filepath,'w') as out:
     csv_out=csv.writer(out, delimiter = '|')
-    csv_out.writerow(['label' , 'tweet_text'])
+    csv_out.writerow(['label' ,'tweet_text' 'clean_text','keywords'])
     for tweet in tweets:
         tweet.set_label(topics[i])
-        csv_out.writerow([tweet.label, tweet.clean_text, tweet.tweet_text])
+        csv_out.writerow([tweet.label, tweet.tweet_text, tweet.clean_text, keywords[topics[i]]])
         i += 1
         pass
 
