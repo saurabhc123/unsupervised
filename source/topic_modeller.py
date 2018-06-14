@@ -40,7 +40,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_1024_tweets.json'
+fileName = 'Dataset_z_41_tweets.json'
 
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)
@@ -62,7 +62,8 @@ for data in dataloader:
     else:
         continue
     tweet.set_clean_text(clean_text)
-    tweets.append(tweet)
+    if tweet.get_word_count() > 5:
+        tweets.append(tweet)
     #print(len(tweets))
 
 
@@ -148,10 +149,13 @@ def show_model_statistics(lda_model, with_visualization=False):
         vis = pyLDAvis.gensim.prepare(lda_model, corpus, id2word)
         pyLDAvis.show(vis)
 
+
+
+
 def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, step=3):
     """
     Compute c_v coherence for various number of topics
-
+    best_coherence = 0.0
     Parameters:
     ----------
     dictionary : Gensim dictionary
@@ -164,6 +168,9 @@ def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, s
     model_list : List of LDA topic models
     coherence_values : Coherence values corresponding to the LDA model with respective number of topics
     """
+    best_coherence = 0.0
+    best_num_of_topics = 2
+    best_model = 0
     coherence_values = []
     model_list = []
     for num_topics in range(start, limit, step):
@@ -171,32 +178,41 @@ def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, s
         #model.num_topics = num_topics
         model_list.append(model)
         coherencemodel = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
-        coherence_values.append(coherencemodel.get_coherence())
+        coherence = coherencemodel.get_coherence()
+        if coherence > best_coherence:
+            best_coherence = coherence
+            best_num_of_topics = num_topics
+            best_model = model
+        coherence_values.append(coherence)
 
-    return model_list, coherence_values
+    return model_list, coherence_values, best_model, best_num_of_topics
 
 
 
 model = get_mallet_lda_model(corpus, id2word, num_topics=90)
+
 #model = get_generic_lda_model(corpus, id2word)
 
 #show_model_statistics(model, True)
 
 def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
     # Can take a long time to run.
-    model_list, coherence_values = compute_coherence_values(dictionary=id2word, corpus=corpus,
-                                                            texts=data_lemmatized, model=model, start=60, limit=86, step=6)
+    start=2
+    limit=150
+    step=6
+    model_list, coherence_values, best_model, best_num_of_topics = compute_coherence_values(dictionary=id2word, corpus=corpus,
+                                                            texts=data_lemmatized, model=model, start=start, limit=limit, step=step)
 
     # Show graph
-    limit=86; start=60; step=6;
-    x = range(start, limit, step)
-    plt.plot(x, coherence_values)
-    plt.xlabel("Num Topics")
-    plt.ylabel("Coherence score")
-    plt.legend(("coherence_values"), loc='best')
-    plt.show()
+    # x = range(start, limit, step)
+    # plt.plot(x, coherence_values)
+    # plt.xlabel("Num Topics")
+    # plt.ylabel("Coherence score")
+    # plt.legend(("coherence_values"), loc='best')
+    # plt.show()
+    return best_model, best_num_of_topics
 
-#find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
 
 def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Init output
@@ -222,8 +238,8 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     contents = pd.Series(texts)
     sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
     return sent_topics_df, topics, keywords
-
-
+print("Using best model with number of topics:", best_num_of_topics)
+model = best_model
 df_topic_sents_keywords , topics, keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
 
 # Format
@@ -240,8 +256,8 @@ with open(exports_filepath,'w') as out:
     csv_out=csv.writer(out, delimiter = '|')
     csv_out.writerow(['label' ,'tweet_text' 'clean_text','keywords'])
     for tweet in tweets:
-        tweet.set_label(topics[i])
-        csv_out.writerow([tweet.label, tweet.tweet_text, tweet.clean_text, keywords[topics[i]]])
+        tweet.set_cluster_label(topics[i])
+        csv_out.writerow([tweet.cluster_label, tweet.tweet_text, tweet.clean_text, keywords[topics[i]]])
         i += 1
         pass
 

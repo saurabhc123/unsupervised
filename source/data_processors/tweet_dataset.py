@@ -5,9 +5,9 @@ from entities.tweet import Tweet
 import numpy as np
 
 class TweetDataSet(Dataset):
-    def __init__(self, datafolder, filename, transform=None, vectorizer=None):
+    def __init__(self, datafolder, filename, transformer=None, vectorizer=None):
         filepath = os.path.join(datafolder,filename)
-        self.transform = transform
+        self.transformer = transformer
         self.vectorizer = vectorizer
         with open(filepath) as f:
             content = f.read()
@@ -21,10 +21,10 @@ class TweetDataSet(Dataset):
         tweet_instance = self.data[idx]
         tweet_text = tweet_instance['text'].replace('\n', ' ').replace('\r', '')
         vectorized_representation = np.array(10)
-        if self.transform is not None:
-            tweet_text = self.transform(tweet_text)
+        if self.transformer is not None:
+            tweet_text = self.transformer.transform(tweet_text)
         if self.vectorizer is not None:
-            vectorized_representation = self.vectorizer(vectorized_representation)
+            vectorized_representation = self.vectorizer.get_sentence_vector(tweet_text)
 
         return {'text': tweet_text, 'embedding': vectorized_representation, 'id':tweet_instance["id"]}
         #return Tweet(tweet_text,tweet_instance["id"]), vectorized_representation

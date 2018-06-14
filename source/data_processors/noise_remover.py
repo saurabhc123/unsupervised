@@ -55,6 +55,9 @@ class NoiseRemover:
         tweet = self.clean_sent(tweet)
         return tweet
 
+    def transform(self,tweet):
+        return self.clean_tweet(tweet)
+
     def clean_sent(self, sent):
         lem = self.wordnet_lemmatizer
         words = sent.replace(","," ").replace(";", " ").replace("#"," ").replace(":", " ").replace("@", " ").split()
