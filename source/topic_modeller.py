@@ -40,7 +40,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_41_tweets.json'
+fileName = 'Dataset_z_1024_tweets.json'
 
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)
@@ -189,9 +189,10 @@ def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, s
 
 
 
-model = get_mallet_lda_model(corpus, id2word, num_topics=90)
+model = get_mallet_lda_model(corpus, id2word, num_topics=74)
 
-#model = get_generic_lda_model(corpus, id2word)
+#model = get_generic_lda_model(corpus, id2word, num_topics=122)
+
 
 #show_model_statistics(model, True)
 
@@ -212,13 +213,14 @@ def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
     # plt.show()
     return best_model, best_num_of_topics
 
-best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+#best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
 
 def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Init output
     sent_topics_df = pd.DataFrame()
     topics = []
     keywords = {}
+    unique_keywords = set()
     # Get main topic in each document
     for i, row in enumerate(ldamodel[corpus]):
         row = sorted(row, key=lambda x: (x[1]), reverse=True)
@@ -230,6 +232,7 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
                 sent_topics_df = sent_topics_df.append(pd.Series([int(topic_num), round(prop_topic,4), topic_keywords]), ignore_index=True)
                 topics.append(int(topic_num))
                 keywords[int(topic_num)] = topic_keywords
+                unique_keywords.add((topic_keywords, topic_num))
             else:
                 break
     sent_topics_df.columns = ['Dominant_Topic', 'Perc_Contribution', 'Topic_Keywords']
@@ -237,10 +240,14 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Add original text to the end of the output
     contents = pd.Series(texts)
     sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
-    return sent_topics_df, topics, keywords
-print("Using best model with number of topics:", best_num_of_topics)
-model = best_model
-df_topic_sents_keywords , topics, keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
+    return sent_topics_df, topics, keywords, unique_keywords
+
+################# Uncomment for best model generation
+#print("Using best model with number of topics:", best_num_of_topics)
+#model = best_model
+
+
+df_topic_sents_keywords , topics, keywords, unique_keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
 
 # Format
 df_dominant_topic = df_topic_sents_keywords.reset_index()
@@ -252,14 +259,26 @@ exports_filename = 'clustering_' + fileName + "_"+ timestamp + '.csv'
 exports_filepath = os.path.join(exports_folder,exports_filename)
 i=0
 
+#model
+
 with open(exports_filepath,'w') as out:
     csv_out=csv.writer(out, delimiter = '|')
     csv_out.writerow(['label' ,'tweet_text' 'clean_text','keywords'])
     for tweet in tweets:
         tweet.set_cluster_label(topics[i])
-        csv_out.writerow([tweet.cluster_label, tweet.tweet_text, tweet.clean_text, keywords[topics[i]]])
+        topic_word_probabilities = model.show_topic(topics[i])# .get_topic_terms()
+        csv_out.writerow([tweet.cluster_label, tweet.tweet_text, tweet.clean_text, topic_word_probabilities])
         i += 1
-        pass
+
+keywords_exports_filename = 'keywords_' + fileName + "_"+ timestamp + '.csv'
+keywords_exports_filepath = os.path.join(exports_folder,keywords_exports_filename)
+
+with open(keywords_exports_filepath,'w') as out:
+    csv_out=csv.writer(out, delimiter = '|')
+    csv_out.writerow(['keywords'])
+    for keywords in unique_keywords:
+        topic_word_probabilities = model.show_topic(keywords[1])# .get_topic_terms()
+        csv_out.writerow([keywords[0],topic_word_probabilities])
 
 #df_dominant_topic.columns = ['Document_No', 'Dominant_Topic', 'Topic_Perc_Contrib', 'Keywords', 'Text']
 
