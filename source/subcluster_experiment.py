@@ -17,9 +17,7 @@ import time
 from parameters import Parameters
 
 
-class Experiment():
-
-
+class SubclusterExperiment():
 
     def __init__(self, name, dataloader, preprocesor, embedding_generator, clusterer, exports_filepath, parameters, selector = None):
         self.name = name
@@ -42,16 +40,10 @@ class Experiment():
         wv = self.embedding_generator
         for data in self.dataloader:
             tweet = Tweet(data)
-            clean_text = self.preprocessor.process_tweet(tweet.tweet_text)
-            sentence_vector, _ = wv.get_sentence_vector(clean_text)
-            if clean_text not in tweets_dict:
-                tweets_dict.add(clean_text)
-            else:
-                continue
+            sentence_vector, _ = wv.get_sentence_vector(tweet.clean_text)
             if self.selector is not None:
                 if not self.selector.select(tweet.cluster_label):
                     continue
-            tweet.set_clean_text(clean_text)
             tweets.append(tweet)
             sentence_vectors.append(sentence_vector)
             #pprint(tweet.tweet_text)

@@ -74,7 +74,7 @@ class word2vec:
 
     def get_sentence_vector(self, sentence):
         featureVec = np.zeros((1,300))
-        return featureVec, "clean_sentence"
+        #return featureVec, "clean_sentence"
         nwords = 0
         clean_sentence = sentence#self.clean_sent(self.wordnet_lemmatizer, sentence)
         model = self.get_model()

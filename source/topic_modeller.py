@@ -40,7 +40,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_1024_tweets.json'
+fileName = 'Dataset_z_967_tweets.json'
 
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)
@@ -189,7 +189,7 @@ def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, s
 
 
 
-model = get_mallet_lda_model(corpus, id2word, num_topics=74)
+model = get_mallet_lda_model(corpus, id2word, num_topics=122)
 
 #model = get_generic_lda_model(corpus, id2word, num_topics=122)
 
@@ -199,7 +199,7 @@ model = get_mallet_lda_model(corpus, id2word, num_topics=74)
 def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
     # Can take a long time to run.
     start=2
-    limit=150
+    limit=200
     step=6
     model_list, coherence_values, best_model, best_num_of_topics = compute_coherence_values(dictionary=id2word, corpus=corpus,
                                                             texts=data_lemmatized, model=model, start=start, limit=limit, step=step)
@@ -213,7 +213,7 @@ def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
     # plt.show()
     return best_model, best_num_of_topics
 
-#best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
 
 def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Init output
@@ -243,8 +243,8 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     return sent_topics_df, topics, keywords, unique_keywords
 
 ################# Uncomment for best model generation
-#print("Using best model with number of topics:", best_num_of_topics)
-#model = best_model
+print("Using best model with number of topics:", best_num_of_topics)
+model = best_model
 
 
 df_topic_sents_keywords , topics, keywords, unique_keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
