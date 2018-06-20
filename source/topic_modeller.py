@@ -40,7 +40,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_967_tweets.json'
+fileName = 'Dataset_z_82_tweets.json'
 
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)
@@ -114,7 +114,7 @@ print ([[(id2word[id], freq) for id, freq in cp] for cp in corpus[:3]])
 
 
 #Build LDA model
-def get_generic_lda_model(corpus, id2word, num_topics=20):
+def get_generic_lda_model(corpus, id2word, num_topics=20, minimum_probability = 0.1):
     lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
                                                id2word=id2word,
                                                num_topics=num_topics,
@@ -124,6 +124,7 @@ def get_generic_lda_model(corpus, id2word, num_topics=20):
                                                passes=10,
                                                alpha='auto',
                                                eta='auto',
+                                               minimum_probability = minimum_probability,
                                                per_word_topics=True)
 
     # Print the Keyword in the 10 topics
@@ -133,7 +134,8 @@ def get_generic_lda_model(corpus, id2word, num_topics=20):
 
 def get_mallet_lda_model(corpus, id2word, num_topics=20):
     mallet_path = 'source/mallet-2.0.8/bin/mallet' # update this path
-    ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=num_topics, id2word=id2word)
+    ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=num_topics, id2word=id2word,
+                                                 topic_threshold = 0.1)
     return ldamallet
 
 def show_model_statistics(lda_model, with_visualization=False):
@@ -189,9 +191,9 @@ def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, s
 
 
 
-model = get_mallet_lda_model(corpus, id2word, num_topics=122)
+model = get_mallet_lda_model(corpus, id2word, num_topics=5)
 
-#model = get_generic_lda_model(corpus, id2word, num_topics=122)
+#model = get_generic_lda_model(corpus, id2word, num_topics=122, minimum_probability = 0.1)
 
 
 #show_model_statistics(model, True)
@@ -213,7 +215,7 @@ def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
     # plt.show()
     return best_model, best_num_of_topics
 
-best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+#best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
 
 def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Init output
@@ -243,11 +245,11 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     return sent_topics_df, topics, keywords, unique_keywords
 
 ################# Uncomment for best model generation
-print("Using best model with number of topics:", best_num_of_topics)
-model = best_model
+#print("Using best model with number of topics:", best_num_of_topics)
+#model = best_model
 
 
-df_topic_sents_keywords , topics, keywords, unique_keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
+df_topic_sents_keywords , topics, keywords, topic_keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
 
 # Format
 df_dominant_topic = df_topic_sents_keywords.reset_index()
@@ -273,12 +275,29 @@ with open(exports_filepath,'w') as out:
 keywords_exports_filename = 'keywords_' + fileName + "_"+ timestamp + '.csv'
 keywords_exports_filepath = os.path.join(exports_folder,keywords_exports_filename)
 
+
+keyword_dict = {}
 with open(keywords_exports_filepath,'w') as out:
     csv_out=csv.writer(out, delimiter = '|')
     csv_out.writerow(['keywords'])
-    for keywords in unique_keywords:
+    for keywords in topic_keywords:
         topic_word_probabilities = model.show_topic(keywords[1])# .get_topic_terms()
+        for (keyword, keyword_probability) in topic_word_probabilities:
+            if keyword in keyword_dict.keys():
+                keyword_dict[keyword] += keyword_probability
+            else:
+                keyword_dict[keyword] = keyword_probability
         csv_out.writerow([keywords[0],topic_word_probabilities])
+
+keywords_exports_filename = 'keyword_probabilities_' + fileName + "_"+ timestamp + '.csv'
+keywords_exports_filepath = os.path.join(exports_folder,keywords_exports_filename)
+
+with open(keywords_exports_filepath,'w') as out:
+    csv_out=csv.writer(out, delimiter = '|')
+    csv_out.writerow(['keywords', 'probabilities'])
+    for keyword in keyword_dict:
+       csv_out.writerow([keyword ,keyword_dict[keyword]])
+
 
 #df_dominant_topic.columns = ['Document_No', 'Dominant_Topic', 'Topic_Perc_Contrib', 'Keywords', 'Text']
 
