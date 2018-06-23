@@ -40,7 +40,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_82_tweets.json'
+fileName = 'Dataset_z_41_tweets.json'
 
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)
@@ -191,7 +191,7 @@ def compute_coherence_values(dictionary, corpus, texts, limit, model, start=2, s
 
 
 
-model = get_mallet_lda_model(corpus, id2word, num_topics=5)
+model = get_mallet_lda_model(corpus, id2word, num_topics=122)
 
 #model = get_generic_lda_model(corpus, id2word, num_topics=122, minimum_probability = 0.1)
 
@@ -215,7 +215,7 @@ def find_best_num_of_topics(corpus, id2word, data_lemmatized, model):
     # plt.show()
     return best_model, best_num_of_topics
 
-#best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
+best_model, best_num_of_topics = find_best_num_of_topics(corpus, id2word, data_lemmatized, model)
 
 def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     # Init output
@@ -292,11 +292,13 @@ with open(keywords_exports_filepath,'w') as out:
 keywords_exports_filename = 'keyword_probabilities_' + fileName + "_"+ timestamp + '.csv'
 keywords_exports_filepath = os.path.join(exports_folder,keywords_exports_filename)
 
+sorted_d = [(k,v) for k,v in keyword_dict.items()]
+
 with open(keywords_exports_filepath,'w') as out:
     csv_out=csv.writer(out, delimiter = '|')
     csv_out.writerow(['keywords', 'probabilities'])
-    for keyword in keyword_dict:
-       csv_out.writerow([keyword ,keyword_dict[keyword]])
+    for keyword in sorted_d:
+       csv_out.writerow([keyword ,sorted_d[keyword]])
 
 
 #df_dominant_topic.columns = ['Document_No', 'Dominant_Topic', 'Topic_Perc_Contrib', 'Keywords', 'Text']
