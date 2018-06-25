@@ -37,7 +37,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_42_tweets.json'
+fileName = 'Dataset_z_1024_tweets.json'
 
 # fileName = 'junk.json'
 filepath = os.path.join(datafolder, fileName)
@@ -75,6 +75,9 @@ print(data_words[:1])
 bigram = gensim.models.Phrases(data_words, min_count=5, threshold=100)  # higher threshold fewer phrases.
 trigram = gensim.models.Phrases(bigram[data_words], threshold=100)
 
+#words = [(v, k)  for  k, v in bigram.vocab.keys()]
+#sorted_word_frequencies = sorted(words,)
+
 # Faster way to get a sentence clubbed as a trigram/bigram
 bigram_mod = Phraser(bigram)
 trigram_mod = Phraser(trigram)
@@ -101,6 +104,7 @@ print(data_lemmatized[:1])
 # Create Dictionary
 vocab = corpora.Dictionary(data_lemmatized)
 id2word = dict((item[1][0], item[1][1]) for item in enumerate(vocab.items()))
+word2id = dict((item[1][1], item[1][0]) for item in enumerate(vocab.items()))
 
 # Create Corpus
 texts = data_lemmatized
@@ -117,11 +121,64 @@ for text in texts:
     i += 1
 print("Doc-term matrix shape:", doc_term_matrix.shape)
 X = doc_term_matrix
-model = guidedlda.GuidedLDA(n_topics=134, n_iter=200, random_state=7, refresh=20)
-model.fit(X)
+
+seed_topic_list = [['help', 'victim','newtown', 'family'],
+                   ['mass', 'newtown'],
+                   ['tribute','vigil','picket','baptist','church'],
+                   ['victim', 'tragedy', 'mourn', 'rip','innocent','sad','child'],
+                   ['fund', 'donate', 'pour', 'raise'],
+                   ['family', 'prayer', 'heart', 'silence','lose','child','parent'],
+                   ['month', 'anniversary', 'commemorate', 'remembrance', 'since', 'year'],
+                   ['nra', 'gun', 'control', 'arm', 'stop', 'good', 'bad', 'guard'],
+                   ['hold', 'funeral'],
+                   ['obama', 'president', 'speech', 'speak', 'barrack'],
+                   ['kill', 'massacre', 'die', 'child','dead','death','include'],
+                   ['survivor', 'sue'],
+                   ['fake','shit']
+                   ]
+
+seed_topics = {}
+for t_id, st in enumerate(seed_topic_list):
+    for word in st:
+        try:
+            seed_topics[word2id[word]] = t_id
+        except:
+            print("Word {} not found in dictionary for seeding topic {}.".format(word,t_id))
+            pass
+
+seed_confidence=0.15
+n_topics=134
+n_iter=200
+model = guidedlda.GuidedLDA(n_topics=n_topics, n_iter=n_iter, random_state=7, refresh=20)
+model.fit(X,seed_topics=seed_topics, seed_confidence=seed_confidence)
 
 topic_word = model.topic_word_
 n_top_words = 8
 for i, topic_dist in enumerate(topic_word):
     topic_words = np.array(vocab)[np.argsort(topic_dist)][:-(n_top_words + 1):-1]
     print('Topic {}: {}'.format(i, ' '.join([id2word[index] for index in topic_words])))
+
+doc_topics = model.transform(X)
+
+exports_folder = 'data/exports/'
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+exports_filename = 'guided_LDA_'+ str(seed_confidence) + "_" + fileName + "_"+ timestamp + '.csv'
+exports_filepath = os.path.join(exports_folder,exports_filename)
+with open(exports_filepath,'w') as out:
+    csv_out=csv.writer(out, delimiter = '|')
+    csv_out.writerow(['label' ,'tweet_text'])
+    for i in range(len(X)):
+        info = (doc_topics[i].argmax(), X[i])
+        tweet = tweets[i]
+        csv_out.writerow([doc_topics[i].argmax(), tweet.tweet_text, tweet.clean_text])
+
+parameters = Parameters()
+parameters.add_parameter("num_topics", n_topics)
+parameters.add_parameter("num_iterations", n_iter)
+parameters.add_parameter("seed_probability", seed_confidence)
+parameters.add_complex_parameter("seed_topics", seed_topic_list)
+parameters.write_parameters(exports_folder, timestamp)
+
+#Generate similarity for all sub-clusters
+
+

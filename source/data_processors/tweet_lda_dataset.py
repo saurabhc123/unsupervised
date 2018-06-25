@@ -27,7 +27,7 @@ class TweetLDADataSet(Dataset):
         cluster_label = row[0]
         tweet_text = row[1]
         clean_text = row[2]
-        probs = row[3]
+        #probs = row[3]
         # self.tweet = Tweet()
         # self.tweet.set_cluster_label(cluster_label)
         # self.tweet.set_clean_text(clean_text)

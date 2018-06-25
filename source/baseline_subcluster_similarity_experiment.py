@@ -14,13 +14,13 @@ from clustering.similarity_clusterer import SimilarityClusterer
 import numpy as np
 import csv
 import time
-from subcluster_experiment import SubclusterExperiment
+from subcluster_similarity_experiment import SubclusterSimilarityExperiment
 from data_processors.noise_remover import  NoiseRemover
 from parameters import Parameters
 
 datafolder = 'data/exports/'
 exports_folder = 'data/exports/sub-clusters'
-fileName = 'clustering_Dataset_z_7_tweets.json_20180615-013941.csv'
+fileName = 'clustering_Dataset_z_42_tweets.json_20180615-190715.csv'
 
 #fileName = 'junk.json'
 experiment_datafolder = time.strftime("%Y%m%d-%H%M%S")
@@ -32,11 +32,11 @@ dataloader = DataLoader(dataset, batch_size=1)
 pre_processor = NoiseRemover()
 
 
-class Baseline_Subcluster_Similarity_Experiment(SubclusterExperiment):
+class Baseline_Subcluster_Similarity_Experiment(SubclusterSimilarityExperiment):
     parameters = Parameters()
 
-    def __init__(self, name="Baseline subcluster experiment", eps = 0, cluster_number = 99,
-                 experiment_folder = "", timestamp = ""):
+    def __init__(self, name="Baseline subcluster similarity experiment", eps = 0, cluster_number = 99,
+                 experiment_folder = "", timestamp = "", positive_training_data = [], negative_training_data = []):
         self.timestamp = timestamp
         self.experiment_folder = experiment_folder
         exports_filename = str(cluster_number) +'-sub_cluster_similarity' + fileName + '.csv'
@@ -46,16 +46,18 @@ class Baseline_Subcluster_Similarity_Experiment(SubclusterExperiment):
         embedding_generator = word2vec.word2vec()
         cluster_selector = ClusterSelector(cluster_number)
         self.parameters.add_parameter("Input_File_Name", fileName)
-        self.parameters.add_parameter("Clusterer", "DBScan")
-        self.parameters.add_parameter("eps", eps)
+        self.parameters.add_parameter("Clusterer", "Similarity on Guided LDA")
         self.parameters.add_parameter("Embedding", "word2vec")
-        self.parameters.add_parameter("Experiment_Type", "sub_clustering_experiment")
+        self.parameters.add_parameter("Experiment_Type", "guided_sub_clustering_experiment")
         self.parameters.add_parameter("Cluster_number", cluster_number)
-        SubclusterExperiment.__init__(self, name, dataloader, pre_processor, embedding_generator, clusterer,
-                                      exports_filepath, self.parameters,selector=cluster_selector)
+        self.positive_training_data = positive_training_data
+        self.negative_training_data = negative_training_data
+        SubclusterSimilarityExperiment.__init__(self, name, dataloader, pre_processor, embedding_generator, clusterer,
+                                      exports_filepath, self.parameters,self.positive_training_data, self.negative_training_data,
+                                                selector=cluster_selector)
 
     def perform_experiment(self):
-        SubclusterExperiment.perform_experiment(self)
+        SubclusterSimilarityExperiment.perform_experiment(self)
         self.parameters.write_parameters(self.experiment_folder, self.timestamp)
         print("Experiment complete")
 
@@ -63,7 +65,7 @@ class Baseline_Subcluster_Similarity_Experiment(SubclusterExperiment):
 
 
 
-total_clusters = 26
+total_clusters = 134
 # for i in range(experiment_count):
 #     eps = eps*10
 #
@@ -76,10 +78,27 @@ eps = 0
 timestamp = time.strftime("%Y%m%d-%H%M%S")
 experiment_folder = os.path.join(exports_folder,timestamp)
 os.mkdir(experiment_folder)
+positive_training_data = []
+negative_training_data = []
 for cluster_label in range(total_clusters):
         print("Cluster number:",cluster_label)
-        experiment = Baseline_Subcluster_Similarity_Experiment(eps = eps, cluster_number = cluster_label, experiment_folder=experiment_folder, timestamp = timestamp)
+        experiment = Baseline_Subcluster_Similarity_Experiment(eps = eps, cluster_number = cluster_label,
+                                                               experiment_folder=experiment_folder,
+                                                               timestamp = timestamp, positive_training_data = positive_training_data,
+                                                               negative_training_data = negative_training_data)
         experiment.perform_experiment()
+i = 0
+
+training_data_filename = "training.csv"
+training_data_absolute_filename = os.path.join(experiment_folder,training_data_filename)
+with open(training_data_absolute_filename,'w') as out:
+    csv_out=csv.writer(out, delimiter = '|')
+    csv_out.writerow(['Label' , 'clean_text' ,'tweet_text'])
+    for tweet in positive_training_data:
+        csv_out.writerow([str(1), tweet.clean_text, tweet.tweet_text])
+        pass
+
+
 
 # for i in range(50):
 #     print(tweets[i].label ,tweets[i].tweet_text)

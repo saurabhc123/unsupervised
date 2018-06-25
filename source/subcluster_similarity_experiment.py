@@ -19,7 +19,8 @@ from parameters import Parameters
 
 class SubclusterSimilarityExperiment():
 
-    def __init__(self, name, dataloader, preprocesor, embedding_generator, clusterer, exports_filepath, parameters, selector = None):
+    def __init__(self, name, dataloader, preprocesor, embedding_generator, clusterer, exports_filepath, parameters,
+                 positive_training_data, negative_training_data, selector = None):
         self.name = name
         self.data = dataloader
         self.preprocessor = preprocesor
@@ -29,6 +30,8 @@ class SubclusterSimilarityExperiment():
         self.dataloader = dataloader
         self.parameters = parameters
         self.selector = selector
+        self.positive_training_data = positive_training_data
+        self.negative_training_data = negative_training_data
         pass
 
 
@@ -54,13 +57,28 @@ class SubclusterSimilarityExperiment():
 
         similarities = self.clusterer.perform_clustering(sentence_vectors, self.parameters)
         i = 0
+        max_similarity = 0
+        min_similarity = 1.0
+        for tweet in tweets:
+                tweet.label = similarities[i]
+                if(tweet.label > max_similarity):
+                    max_similarity = tweet.label
+                if(tweet.label <= min_similarity):
+                    min_similarity = tweet.label
+                i += 1
+        print("Max similarity:{} , Min similarity:{}".format(max_similarity, min_similarity))
 
+        threshold = max_similarity - ((max_similarity - min_similarity) / 10)
+        sorted_tweets = sorted(tweets, key=lambda tweet: -tweet.label)
+        i =0
         with open(self.exports_filepath,'w') as out:
             csv_out=csv.writer(out, delimiter = '|')
-            csv_out.writerow(['Similarity' , 'clean_text' 'tweet_text'])
-            for tweet in tweets:
-                tweet.label = similarities[i]
+            csv_out.writerow(['Similarity' , 'clean_text' ,'tweet_text'])
+            for tweet in sorted_tweets:
+                if(tweet.label > threshold):
+                    self.positive_training_data.append(tweet)
                 csv_out.writerow([tweet.label, tweet.clean_text, tweet.tweet_text])
                 i += 1
                 pass
+
 
