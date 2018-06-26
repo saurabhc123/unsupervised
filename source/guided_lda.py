@@ -75,8 +75,11 @@ print(data_words[:1])
 bigram = gensim.models.Phrases(data_words, min_count=5, threshold=100)  # higher threshold fewer phrases.
 trigram = gensim.models.Phrases(bigram[data_words], threshold=100)
 
-#words = [(v, k)  for  k, v in bigram.vocab.keys()]
-#sorted_word_frequencies = sorted(words,)
+words = [(bigram.vocab[key], key.decode("utf-8"))  for  key in bigram.vocab.keys()]
+sorted_word_frequencies = sorted(words, key=lambda word: -(word[0]))
+
+sorted_unigrams = [word for word in sorted_word_frequencies if "_" not in word[1]]
+sorted_bigrams = [word for word in sorted_word_frequencies if "_" in word[1]]
 
 # Faster way to get a sentence clubbed as a trigram/bigram
 bigram_mod = Phraser(bigram)
@@ -177,6 +180,8 @@ parameters.add_parameter("num_topics", n_topics)
 parameters.add_parameter("num_iterations", n_iter)
 parameters.add_parameter("seed_probability", seed_confidence)
 parameters.add_complex_parameter("seed_topics", seed_topic_list)
+parameters.add_complex_parameter("unigrams_counts", sorted_unigrams)
+parameters.add_complex_parameter("bigrams_counts", sorted_bigrams)
 parameters.write_parameters(exports_folder, timestamp)
 
 #Generate similarity for all sub-clusters
