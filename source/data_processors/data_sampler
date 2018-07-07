@@ -1,0 +1,76 @@
+import json
+import os
+from pprint import pprint
+from os import path
+from data_processors.tweet_text_dataset import TweetTextDataSet
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import RandomSampler
+from entities.tweet import Tweet
+from embeddings import word2vec
+from clustering import DBScan
+from clustering import clusterer
+import csv
+import time
+from experiment import Experiment
+from data_processors.noise_remover import NoiseRemover
+from parameters import Parameters
+import re
+import numpy as np
+import pandas as pd
+from pprint import pprint
+# Gensim
+import gensim
+import gensim.corpora as corpora
+from gensim.utils import simple_preprocess
+from gensim.models import CoherenceModel
+from gensim.models.phrases import Phraser
+# Plotting tools
+import pyLDAvis
+import pyLDAvis.gensim  # don't skip this
+import matplotlib.pyplot as plt
+# NLTK Stop words
+from nltk.corpus import stopwords
+from guidedlda import guidedlda, utils
+
+stop_words = stopwords.words('english')
+stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
+
+datafolder = 'data/classification_data/'
+exports_folder = 'data/exports/'
+fileName = 'Dataset_z_41_tweets.json'
+
+# fileName = 'junk.json'
+filepath = os.path.join(datafolder, fileName)
+
+dataset = TweetTextDataSet(datafolder, fileName)
+sampler = RandomSampler(dataset)
+dataloader = DataLoader(dataset, sampler=sampler, batch_size=3000)
+pre_processor = NoiseRemover()
+
+tweets = []
+tweets_dict = set()
+sentence_vectors = []
+
+exports_folder = 'data/exports/'
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+exports_filename = 'random_samples_' + "_" + fileName + "_"+ timestamp + '.csv'
+exports_filepath = os.path.join(exports_folder,exports_filename)
+total_tweets = 0
+with open(exports_filepath,'w') as out:
+    csv_out=csv.writer(out, delimiter = '|')
+    csv_out.writerow(['label', 'tweet_text'])
+    for data in dataloader:
+        tweets = data['text']
+        for tweet_text in tweets:
+            clean_text = pre_processor.process_tweet(tweet_text)
+            if clean_text not in tweets_dict:
+                tweets_dict.add(clean_text)
+                csv_out.writerow([str(0), tweet_text])
+                total_tweets += 1
+            if total_tweets > 1000:
+                break
+        break
+
+print("Total tweets exported:{}".format(total_tweets))
+

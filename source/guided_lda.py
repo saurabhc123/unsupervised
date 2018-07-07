@@ -37,7 +37,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_1024_tweets.json'
+fileName = 'Dataset_z_42_tweets.json'
 
 # fileName = 'junk.json'
 filepath = os.path.join(datafolder, fileName)
@@ -180,8 +180,8 @@ parameters.add_parameter("num_topics", n_topics)
 parameters.add_parameter("num_iterations", n_iter)
 parameters.add_parameter("seed_probability", seed_confidence)
 parameters.add_complex_parameter("seed_topics", seed_topic_list)
-parameters.add_complex_parameter("unigrams_counts", sorted_unigrams)
-parameters.add_complex_parameter("bigrams_counts", sorted_bigrams)
+parameters.add_complex_parameter("bigrams_counts", sorted_bigrams[:10])
+parameters.add_complex_parameter("unigrams_counts", sorted_unigrams[:100])
 parameters.write_parameters(exports_folder, timestamp)
 
 #Generate similarity for all sub-clusters
