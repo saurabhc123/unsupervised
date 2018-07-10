@@ -2,26 +2,66 @@
 from tensorflow.contrib.rnn import BasicLSTMCell
 from tensorflow.python.ops.rnn import bidirectional_dynamic_rnn as bi_rnn
 import time
+
+from torch.utils.data import DataLoader
+
 from classifiers.prepare_data import *
 
 # Hyperparameter
-MAX_DOCUMENT_LENGTH = 25
+from data_processors.noise_remover import NoiseRemover
+from data_processors.tweet_basic_dataset import TweetBasicDataSet
+from data_processors.tweet_dataset import TweetDataSet
+from data_processors.tweet_lda_dataset import TweetLDADataSet
+from entities.tweet import Tweet
+
+MAX_DOCUMENT_LENGTH = 30
 EMBEDDING_SIZE = 128
 HIDDEN_SIZE = 64
 ATTENTION_SIZE = 64
-lr = 1e-3
+lr = 1e-5
 BATCH_SIZE = 256
 KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
-MAX_LABEL = 15
-epochs = 10
+MAX_LABEL = 2
+epochs = 20
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 
 # load data
-x_train, y_train = load_data("data/classification_data/Training Data/train.csv", names=["Label", "clean_text", "tweet_text"])
-x_test, y_test = load_data("data/classification_data/Training Data/test.csv")
+x_train, y_train = ([],[])#load_data("data/classification_data/Training Data/train.csv", names=["Label", "clean_text", "tweet_text"])
+x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.csv")
+
+datafolder = 'data/classification_data/Training Data'
+exports_folder = 'data/exports/'
+training_fileName = 'train.csv'
+test_fileName = 'test.csv'
+pre_processor = NoiseRemover()
+training_dataset = TweetBasicDataSet(datafolder, training_fileName, transformer=pre_processor)
+training_dataloader = DataLoader(training_dataset, batch_size=len(training_dataset.data))
+test_dataset = TweetBasicDataSet(datafolder, test_fileName, transformer=pre_processor)
+test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset.data))
+
+
+training_tweets = []
+tweets_dict = set()
+sentence_vectors = []
+
+def to_one_hot(y, n_class):
+    return np.eye(n_class)[y]
+
+for data in training_dataloader:
+    x_train = data['clean_text']
+    y_train = to_one_hot(data['cluster_label'],MAX_LABEL)
+    break
+
+for data in test_dataloader:
+    x_test = data['clean_text']
+    y_test = to_one_hot(data['cluster_label'],MAX_LABEL)
+    break
+
+
+
 
 # data preprocessing
 x_train, x_test, vocab, vocab_size = \
@@ -95,6 +135,11 @@ with tf.Session(graph=graph) as sess:
             l, _, acc = sess.run([loss, optimizer, accuracy], feed_dict=fd)
 
         epoch_finish = time.time()
+        print("Training accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
+            batch_x: x_train,
+            batch_y: y_train,
+            keep_prob: 1.0
+        }))
         print("Validation accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
             batch_x: x_dev,
             batch_y: y_dev,

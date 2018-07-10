@@ -132,19 +132,12 @@ for text in texts:
 print("Doc-term matrix shape:", doc_term_matrix.shape)
 X = doc_term_matrix
 
-seed_topic_list = [['help', 'victim','newtown', 'family','make'],
-                   ['mass', 'shoot', 'say'],
-                   ['shooter','call','law','baptist','church'],
-                   ['victim', 'tragedy', 'mourn', 'rip','innocent','sad','child'],
-                   ['school', 'gun', 'student'],
-                   ['family', 'prayer', 'heart', 'silence','lose','child','parent'],
-                   ['month', 'anniversary', 'commemorate', 'remembrance', 'since', 'year'],
-                   ['nra', 'gun', 'control', 'arm', 'stop', 'good', 'bad', 'guard','show'],
-                   ['florida', 'think'],
-                   ['gun', 'violence'],
-                   ['kill', 'massacre', 'die', 'child','dead','death','include','murder'],
-                   ['survivor', 'march',],
-                   ['nikolas','cruz']
+seed_topic_list = [['tsunami', 'magnitude','hit'],
+                   ['strike', 'near', 'fukushima', 'island'],
+                   ['nuclear','warn','today','quake','disaster'],
+                   ['victim', 'disaster', 'tsunami', 'earthquake'],
+                   ['damage', 'disaster', 'cause'],
+                   ['victim', 'area', 'kill', 'dead','lose','please']
                    ]
 
 seed_topics = {}
