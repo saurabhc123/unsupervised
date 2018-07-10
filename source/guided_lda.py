@@ -37,7 +37,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_42_tweets.json'
+fileName = 'Dataset_z_7_tweets.json'
 
 # fileName = 'junk.json'
 filepath = os.path.join(datafolder, fileName)
@@ -80,6 +80,13 @@ sorted_word_frequencies = sorted(words, key=lambda word: -(word[0]))
 
 sorted_unigrams = [word for word in sorted_word_frequencies if "_" not in word[1]]
 sorted_bigrams = [word for word in sorted_word_frequencies if "_" in word[1]]
+
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+parameters = Parameters()
+parameters.add_complex_parameter("bigrams_counts", sorted_bigrams[:10])
+parameters.add_complex_parameter("unigrams_counts", sorted_unigrams[:100])
+parameters.write_parameters(exports_folder, timestamp)
+
 
 # Faster way to get a sentence clubbed as a trigram/bigram
 bigram_mod = Phraser(bigram)
@@ -125,19 +132,19 @@ for text in texts:
 print("Doc-term matrix shape:", doc_term_matrix.shape)
 X = doc_term_matrix
 
-seed_topic_list = [['help', 'victim','newtown', 'family'],
-                   ['mass', 'newtown'],
-                   ['tribute','vigil','picket','baptist','church'],
+seed_topic_list = [['help', 'victim','newtown', 'family','make'],
+                   ['mass', 'shoot', 'say'],
+                   ['shooter','call','law','baptist','church'],
                    ['victim', 'tragedy', 'mourn', 'rip','innocent','sad','child'],
-                   ['fund', 'donate', 'pour', 'raise'],
+                   ['school', 'gun', 'student'],
                    ['family', 'prayer', 'heart', 'silence','lose','child','parent'],
                    ['month', 'anniversary', 'commemorate', 'remembrance', 'since', 'year'],
-                   ['nra', 'gun', 'control', 'arm', 'stop', 'good', 'bad', 'guard'],
-                   ['hold', 'funeral'],
-                   ['obama', 'president', 'speech', 'speak', 'barrack'],
-                   ['kill', 'massacre', 'die', 'child','dead','death','include'],
-                   ['survivor', 'sue'],
-                   ['fake','shit']
+                   ['nra', 'gun', 'control', 'arm', 'stop', 'good', 'bad', 'guard','show'],
+                   ['florida', 'think'],
+                   ['gun', 'violence'],
+                   ['kill', 'massacre', 'die', 'child','dead','death','include','murder'],
+                   ['survivor', 'march',],
+                   ['nikolas','cruz']
                    ]
 
 seed_topics = {}
@@ -149,8 +156,8 @@ for t_id, st in enumerate(seed_topic_list):
             print("Word {} not found in dictionary for seeding topic {}.".format(word,t_id))
             pass
 
-seed_confidence=0.15
-n_topics=134
+seed_confidence=0.50
+n_topics=26
 n_iter=200
 model = guidedlda.GuidedLDA(n_topics=n_topics, n_iter=n_iter, random_state=7, refresh=20)
 model.fit(X,seed_topics=seed_topics, seed_confidence=seed_confidence)

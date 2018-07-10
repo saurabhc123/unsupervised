@@ -20,7 +20,7 @@ from parameters import Parameters
 
 datafolder = 'data/exports/'
 exports_folder = 'data/exports/sub-clusters'
-fileName = 'clustering_Dataset_z_42_tweets.json_20180615-190715.csv'
+fileName = 'guided_LDA_0.5_Dataset_z_1045_tweets.json_20180709-194433.csv'
 
 #fileName = 'junk.json'
 experiment_datafolder = time.strftime("%Y%m%d-%H%M%S")
@@ -65,7 +65,7 @@ class Baseline_Subcluster_Similarity_Experiment(SubclusterSimilarityExperiment):
 
 
 
-total_clusters = 134
+total_clusters = 122
 # for i in range(experiment_count):
 #     eps = eps*10
 #
