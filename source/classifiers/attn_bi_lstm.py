@@ -14,17 +14,17 @@ from data_processors.tweet_dataset import TweetDataSet
 from data_processors.tweet_lda_dataset import TweetLDADataSet
 from entities.tweet import Tweet
 
-MAX_DOCUMENT_LENGTH = 30
-EMBEDDING_SIZE = 128
-HIDDEN_SIZE = 64
-ATTENTION_SIZE = 64
+MAX_DOCUMENT_LENGTH = 15
+EMBEDDING_SIZE = 20
+HIDDEN_SIZE = 16
+ATTENTION_SIZE = 2
 lr = 1e-5
 BATCH_SIZE = 256
 KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 20
+epochs = 30
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 
@@ -83,7 +83,7 @@ with graph.as_default():
     embeddings_var = tf.Variable(tf.random_uniform([vocab_size, EMBEDDING_SIZE], -1.0, 1.0), trainable=True)
     batch_embedded = tf.nn.embedding_lookup(embeddings_var, batch_x)
     W = tf.Variable(tf.random_normal([HIDDEN_SIZE], stddev=0.1))
-    # print(batch_embedded.shape)  # (?, 256, 100)
+    print(batch_embedded.shape)  # (?, 256, 100)
 
     rnn_outputs, _ = bi_rnn(BasicLSTMCell(HIDDEN_SIZE), BasicLSTMCell(HIDDEN_SIZE),
                             inputs=batch_embedded, dtype=tf.float32)
@@ -107,10 +107,12 @@ with graph.as_default():
     W = tf.Variable(tf.truncated_normal([HIDDEN_SIZE, MAX_LABEL], stddev=0.1))
     b = tf.Variable(tf.constant(0., shape=[MAX_LABEL]))
     y_hat = tf.nn.xw_plus_b(drop, W, b)
-    # print(y_hat.shape)
+    #print(y_hat.shape)
 
     # y_hat = tf.squeeze(y_hat)
-
+    #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
+    modified_y_hat = y_hat[:,1] - 0.05
+    resultant_y_hat = tf.stack([y_hat[:,0],modified_y_hat],axis=1)
     loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
@@ -119,7 +121,7 @@ with graph.as_default():
     accuracy = tf.reduce_mean(tf.cast(tf.equal(prediction, tf.argmax(batch_y, 1)), tf.float32))
 
 steps = 10001 # about 5 epochion.cpython-35.pyc
-
+predictions = []
 with tf.Session(graph=graph) as sess:
     sess.run(tf.global_variables_initializer())
     print("Initialized! ")
@@ -133,18 +135,21 @@ with tf.Session(graph=graph) as sess:
         for x_batch, y_batch in fill_feed_dict(x_train, y_train, BATCH_SIZE):
             fd = {batch_x: x_batch, batch_y: y_batch, keep_prob: KEEP_PROB}
             l, _, acc = sess.run([loss, optimizer, accuracy], feed_dict=fd)
+            #print(x_batch.shape)
+            #print(y_batch)
 
         epoch_finish = time.time()
-        print("Training accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
+        print("Training accuracy and loss: ", sess.run([accuracy, loss,resultant_y_hat], feed_dict={
             batch_x: x_train,
             batch_y: y_train,
             keep_prob: 1.0
         }))
-        print("Validation accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
+        print("Validation accuracy and loss: ", sess.run([accuracy, loss, tf.nn.softmax(y_hat)], feed_dict={
             batch_x: x_dev,
             batch_y: y_dev,
             keep_prob: 1.0
         }))
+
 
     print("Training finished, time consumed : ", time.time() - start, " s")
     print("Start evaluating:  \n")
@@ -153,10 +158,12 @@ with tf.Session(graph=graph) as sess:
     for x_batch, y_batch in fill_feed_dict(x_test, y_test, BATCH_SIZE):
             fd = {batch_x: x_batch, batch_y: y_batch, keep_prob: 1.0}
             acc = sess.run(accuracy, feed_dict=fd)
+            predictions.append(sess.run(prediction, feed_dict=fd))
             test_acc += acc
             cnt += 1        
     
     print("Test accuracy : %f %%" % ( test_acc / cnt * 100))
+    print(predictions)
 
 
 

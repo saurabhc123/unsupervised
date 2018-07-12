@@ -24,12 +24,15 @@ class TweetBasicDataSet(Dataset):
     def __getitem__(self, idx):
         tweet_instance = self.data[idx]
         row = tweet_instance
-        cluster_label = int(row[0])
-        clean_text = row[1]
-        if len(row) > 2:
-            tweet_text = row[2]
-        else:
-            tweet_text =  clean_text
+        try:
+            cluster_label = int(row[0])
+            clean_text = row[1]
+            if len(row) > 2:
+                tweet_text = row[2]
+            else:
+                tweet_text =  clean_text
+        except:
+            print("Error ->", idx)
         if self.transformer is not None:
             clean_text = self.transformer.process_tweet(tweet_text)
 
