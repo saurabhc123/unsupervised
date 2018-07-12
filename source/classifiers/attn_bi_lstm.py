@@ -111,13 +111,13 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    modified_y_hat = y_hat[:,1] - 0.05
+    modified_y_hat = y_hat[:,1] - 0.15
     resultant_y_hat = tf.stack([y_hat[:,0],modified_y_hat],axis=1)
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=resultant_y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
     # Accuracy metric
-    prediction = tf.argmax(tf.nn.softmax(y_hat), 1)
+    prediction = tf.argmax(tf.nn.softmax(resultant_y_hat), 1)
     accuracy = tf.reduce_mean(tf.cast(tf.equal(prediction, tf.argmax(batch_y, 1)), tf.float32))
 
 steps = 10001 # about 5 epochion.cpython-35.pyc
@@ -139,12 +139,12 @@ with tf.Session(graph=graph) as sess:
             #print(y_batch)
 
         epoch_finish = time.time()
-        print("Training accuracy and loss: ", sess.run([accuracy, loss,resultant_y_hat], feed_dict={
+        print("Training accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
             batch_x: x_train,
             batch_y: y_train,
             keep_prob: 1.0
         }))
-        print("Validation accuracy and loss: ", sess.run([accuracy, loss, tf.nn.softmax(y_hat)], feed_dict={
+        print("Validation accuracy and loss: ", sess.run([accuracy, loss, tf.nn.softmax(resultant_y_hat)], feed_dict={
             batch_x: x_dev,
             batch_y: y_dev,
             keep_prob: 1.0
