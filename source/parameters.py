@@ -17,4 +17,4 @@ class Parameters:
         filepath = os.path.join(exports_folder, filename)
         exDict = {'exDict': self.paramaters}
         with open(filepath,'w') as out:
-            out.write(json.dumps(exDict))
+            out.write(json.dumps(exDict, indent=4, sort_keys= False))

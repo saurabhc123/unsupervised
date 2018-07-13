@@ -18,9 +18,11 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import confusion_matrix
 
-MAX_DOCUMENT_LENGTH = 15
-EMBEDDING_SIZE = 20
-HIDDEN_SIZE = 16
+from parameters import Parameters
+
+MAX_DOCUMENT_LENGTH = 10
+EMBEDDING_SIZE = 5
+HIDDEN_SIZE = 4
 ATTENTION_SIZE = 2
 lr = 1e-3
 BATCH_SIZE = 256
@@ -28,9 +30,19 @@ KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 100
+epochs = 20
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
+parameters = Parameters()
+parameters.add_parameter("MAX_DOCUMENT_LENGTH", MAX_DOCUMENT_LENGTH)
+parameters.add_parameter("EMBEDDING_SIZE",EMBEDDING_SIZE)
+parameters.add_parameter("HIDDEN_SIZE",HIDDEN_SIZE)
+parameters.add_parameter("lr",lr)
+parameters.add_parameter("BATCH_SIZE",BATCH_SIZE)
+parameters.add_parameter("KEEP_PROB",KEEP_PROB)
+parameters.add_parameter("LAMBDA",LAMBDA)
+parameters.add_parameter("MAX_LABEL",MAX_LABEL)
+parameters.add_parameter("epochs",epochs)
 
 # load data
 x_train, y_train = ([],[])#load_data("data/classification_data/Training Data/train.csv", names=["Label", "clean_text", "tweet_text"])
@@ -40,6 +52,8 @@ datafolder = 'data/classification_data/Training Data'
 exports_folder = 'data/exports/'
 training_fileName = 'train.csv'
 test_fileName = 'test.csv'
+parameters.add_parameter("Training filename", training_fileName)
+parameters.add_parameter("Test filename", test_fileName)
 pre_processor = NoiseRemover()
 training_dataset = TweetBasicDataSet(datafolder, training_fileName, transformer=pre_processor)
 training_dataloader = DataLoader(training_dataset, batch_size=len(training_dataset.data))
@@ -115,9 +129,11 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    modified_y_hat = tf.nn.softmax(y_hat)[:,1] - 0.5
+    probability_penalty = 0.8
+    modified_y_hat = tf.nn.softmax(y_hat)[:,1] - probability_penalty
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=resultant_y_hat, labels=batch_y))
+    parameters.add_parameter("Optimizing Logit Variable", "y_hat")
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
     # Accuracy metric
@@ -150,11 +166,12 @@ with tf.Session(graph=graph) as sess:
             keep_prob: 1.0
         }))
 
-        print("Validation accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
+        val_acc_loss = "Validation accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
             batch_x: x_dev,
             batch_y: y_dev,
             keep_prob: 1.0
-        }))
+        })
+        print(val_acc_loss)
         validation_predictions = sess.run([prediction], feed_dict={
             batch_x: x_dev,
             batch_y: y_dev,
@@ -169,9 +186,13 @@ with tf.Session(graph=graph) as sess:
         recall = recall_score(f1_truelabels, f1_predictions, average='macro')
         print("Validation Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
         cnf_matrix = confusion_matrix(f1_truelabels[0,:], f1_predictions[0,:])
+
         print(cnf_matrix)
 
 
+    parameters.add_parameter("Validation Statistics" ,"Precision:{} Recall:{} F1:{} {}"
+                             .format(precision, recall, f1score, val_acc_loss))
+    parameters.add_parameter("Validation Confusion matrix", cnf_matrix)
     print("Training finished, time consumed : ", time.time() - start, " s")
     print("Start evaluating:  \n")
     cnt = 0
@@ -189,9 +210,9 @@ with tf.Session(graph=graph) as sess:
 
     print("Test accuracy : %f %%" % ( acc))
     f1_predictions = np.array(predictions)
-    print(f1_predictions.shape)
+    #print(f1_predictions.shape)
     f1_truelabels = np.argmax(y_test, 1)
-    print(f1_truelabels.shape)
+    #print(f1_truelabels.shape)
     f1score = f1_score(f1_truelabels, f1_predictions, average='macro')
     precision = precision_score(f1_truelabels, f1_predictions, average='macro')
     recall = recall_score(f1_truelabels, f1_predictions, average='macro')
@@ -200,6 +221,12 @@ with tf.Session(graph=graph) as sess:
     print(cnf_matrix)
     #print(predictions)
 
+    parameters.add_parameter("probability_penalty", probability_penalty)
+    parameters.add_parameter("Test Statistics", "Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+    parameters.add_parameter("Test Confusion matrix", cnf_matrix)
+    exports_folder = 'data/exports/'
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
 
 
 
