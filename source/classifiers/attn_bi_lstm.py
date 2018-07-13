@@ -16,18 +16,19 @@ from entities.tweet import Tweet
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
+from sklearn.metrics import confusion_matrix
 
 MAX_DOCUMENT_LENGTH = 15
 EMBEDDING_SIZE = 20
 HIDDEN_SIZE = 16
 ATTENTION_SIZE = 2
-lr = 1e-5
+lr = 1e-3
 BATCH_SIZE = 256
 KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 1
+epochs = 100
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 
@@ -114,9 +115,9 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    modified_y_hat = tf.nn.softmax(y_hat)[:,1] - 0.30
+    modified_y_hat = tf.nn.softmax(y_hat)[:,1] - 0.5
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=resultant_y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
     # Accuracy metric
@@ -167,6 +168,8 @@ with tf.Session(graph=graph) as sess:
         precision = precision_score(f1_truelabels, f1_predictions, average='macro')
         recall = recall_score(f1_truelabels, f1_predictions, average='macro')
         print("Validation Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+        cnf_matrix = confusion_matrix(f1_truelabels[0,:], f1_predictions[0,:])
+        print(cnf_matrix)
 
 
     print("Training finished, time consumed : ", time.time() - start, " s")
@@ -193,7 +196,9 @@ with tf.Session(graph=graph) as sess:
     precision = precision_score(f1_truelabels, f1_predictions, average='macro')
     recall = recall_score(f1_truelabels, f1_predictions, average='macro')
     print("Test Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
-    print(predictions)
+    cnf_matrix = confusion_matrix(f1_truelabels, f1_predictions)
+    print(cnf_matrix)
+    #print(predictions)
 
 
 
