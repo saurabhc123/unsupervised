@@ -13,6 +13,9 @@ from data_processors.tweet_basic_dataset import TweetBasicDataSet
 from data_processors.tweet_dataset import TweetDataSet
 from data_processors.tweet_lda_dataset import TweetLDADataSet
 from entities.tweet import Tweet
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
 
 MAX_DOCUMENT_LENGTH = 15
 EMBEDDING_SIZE = 20
@@ -24,7 +27,7 @@ KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 30
+epochs = 1
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 
@@ -111,9 +114,9 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    modified_y_hat = y_hat[:,1] - 0.15
-    resultant_y_hat = tf.stack([y_hat[:,0],modified_y_hat],axis=1)
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=resultant_y_hat, labels=batch_y))
+    modified_y_hat = tf.nn.softmax(y_hat)[:,1] - 0.30
+    resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
     # Accuracy metric
@@ -122,6 +125,7 @@ with graph.as_default():
 
 steps = 10001 # about 5 epochion.cpython-35.pyc
 predictions = []
+labels = []
 with tf.Session(graph=graph) as sess:
     sess.run(tf.global_variables_initializer())
     print("Initialized! ")
@@ -144,25 +148,51 @@ with tf.Session(graph=graph) as sess:
             batch_y: y_train,
             keep_prob: 1.0
         }))
-        print("Validation accuracy and loss: ", sess.run([accuracy, loss, tf.nn.softmax(resultant_y_hat)], feed_dict={
+
+        print("Validation accuracy and loss: ", sess.run([accuracy, loss], feed_dict={
             batch_x: x_dev,
             batch_y: y_dev,
             keep_prob: 1.0
         }))
+        validation_predictions = sess.run([prediction], feed_dict={
+            batch_x: x_dev,
+            batch_y: y_dev,
+            keep_prob: 1.0
+        })
+        f1_predictions = np.array(validation_predictions)
+        #print(f1_predictions.shape)
+        f1_truelabels = np.argmax(y_dev, 1).reshape(-1,len(y_dev))
+        #print(f1_truelabels.shape)
+        f1score = f1_score(f1_truelabels, f1_predictions, average='macro')
+        precision = precision_score(f1_truelabels, f1_predictions, average='macro')
+        recall = recall_score(f1_truelabels, f1_predictions, average='macro')
+        print("Validation Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
 
 
     print("Training finished, time consumed : ", time.time() - start, " s")
     print("Start evaluating:  \n")
     cnt = 0
     test_acc = 0
-    for x_batch, y_batch in fill_feed_dict(x_test, y_test, BATCH_SIZE):
-            fd = {batch_x: x_batch, batch_y: y_batch, keep_prob: 1.0}
-            acc = sess.run(accuracy, feed_dict=fd)
-            predictions.append(sess.run(prediction, feed_dict=fd))
-            test_acc += acc
-            cnt += 1        
-    
-    print("Test accuracy : %f %%" % ( test_acc / cnt * 100))
+    # for x_batch, y_batch in fill_feed_dict(x_test, y_test, BATCH_SIZE):
+    #         fd = {batch_x: x_batch, batch_y: y_batch, keep_prob: 1.0}
+    #         acc = sess.run(accuracy, feed_dict=fd)
+    #         predictions.append(np.array(sess.run(prediction, feed_dict=fd)).reshape(-1,len(x_batch)))
+    #         labels.append(y_batch)
+    #         test_acc += acc
+    #         cnt += 1
+    fd = {batch_x: x_test, batch_y: y_test, keep_prob: 1.0}
+    acc, predictions = sess.run([accuracy, prediction], feed_dict=fd)
+
+
+    print("Test accuracy : %f %%" % ( acc))
+    f1_predictions = np.array(predictions)
+    print(f1_predictions.shape)
+    f1_truelabels = np.argmax(y_test, 1)
+    print(f1_truelabels.shape)
+    f1score = f1_score(f1_truelabels, f1_predictions, average='macro')
+    precision = precision_score(f1_truelabels, f1_predictions, average='macro')
+    recall = recall_score(f1_truelabels, f1_predictions, average='macro')
+    print("Test Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
     print(predictions)
 
 
