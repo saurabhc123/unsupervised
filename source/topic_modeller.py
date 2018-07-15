@@ -245,8 +245,8 @@ def format_topics_sentences(ldamodel, corpus=corpus, texts=data):
     return sent_topics_df, topics, keywords, unique_keywords
 
 ################# Uncomment for best model generation
-#print("Using best model with number of topics:", best_num_of_topics)
-#model = best_model
+print("Using best model with number of topics:", best_num_of_topics)
+model = best_model
 
 
 df_topic_sents_keywords , topics, keywords, topic_keywords = format_topics_sentences(model, corpus=corpus, texts=data_lemmatized)
