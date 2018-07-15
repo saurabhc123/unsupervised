@@ -40,7 +40,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_41_tweets.json'
+fileName = 'Dataset_z_823_tweets.json'
 
 #fileName = 'junk.json'
 filepath = os.path.join(datafolder,fileName)

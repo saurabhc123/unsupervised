@@ -51,6 +51,7 @@ def split_dataset(x_test, y_test, dev_ratio):
 def fill_feed_dict(data_X, data_Y, batch_size):
     '''Generator to yield batches'''
     # Shuffle data first.
+    data_X = np.array(data_X)
     perm = np.random.permutation(data_X.shape[0])
     data_X = data_X[perm]
     data_Y = data_Y[perm]

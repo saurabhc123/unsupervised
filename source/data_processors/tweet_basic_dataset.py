@@ -35,6 +35,9 @@ class TweetBasicDataSet(Dataset):
             print("Error ->", idx)
         if self.transformer is not None:
             clean_text = self.transformer.process_tweet(tweet_text)
+        if self.vectorizer is not None:
+            clean_text, _ = self.vectorizer.get_sentence_vector(clean_text)
+            #print(clean_text)
 
         return {'text': tweet_text, 'clean_text': clean_text, 'cluster_label': cluster_label}
         #return {'obj':self.tweet}
