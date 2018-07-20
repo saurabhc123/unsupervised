@@ -24,13 +24,13 @@ MAX_DOCUMENT_LENGTH = 10
 EMBEDDING_SIZE = 5
 HIDDEN_SIZE = 4
 ATTENTION_SIZE = 2
-lr = 1e-3
+lr = 1e-4
 BATCH_SIZE = 256
 KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 20
+epochs = 100
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 parameters = Parameters()
@@ -48,9 +48,9 @@ parameters.add_parameter("epochs",epochs)
 x_train, y_train = ([],[])#load_data("data/classification_data/Training Data/train.csv", names=["Label", "clean_text", "tweet_text"])
 x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.csv")
 
-datafolder = 'data/classification_data/Training Data'
+datafolder = 'data/classification_data/Training Data/823'
 exports_folder = 'data/exports/'
-training_fileName = 'train.csv'
+training_fileName = 'training_0.15.csv'
 test_fileName = 'test.csv'
 parameters.add_parameter("Training filename", training_fileName)
 parameters.add_parameter("Test filename", test_fileName)
@@ -91,6 +91,9 @@ x_test, x_dev, y_test, y_dev, dev_size, test_size = \
     split_dataset(x_test, y_test, 0.1)
 print("Validation size: ", dev_size)
 
+print(x_train[0,:])
+print(x_test[0,:])
+
 graph = tf.Graph()
 with graph.as_default():
 
@@ -129,11 +132,11 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    probability_penalty = 0.8
+    probability_penalty = 0.6
     modified_y_hat = tf.nn.softmax(y_hat)[:,1] - probability_penalty
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
     parameters.add_parameter("Optimizing Logit Variable", "y_hat")
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
     # Accuracy metric

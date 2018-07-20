@@ -171,8 +171,8 @@ for t_id, st in enumerate(seed_topic_list):
             print("Word {} not found in dictionary for seeding topic {}.".format(word,t_id))
             pass
 
-seed_confidence=0.50
-n_topics=50
+seed_confidence=0.25
+n_topics=146
 n_iter=200
 model = guidedlda.GuidedLDA(n_topics=n_topics, n_iter=n_iter, random_state=7, refresh=20)
 model.fit(X,seed_topics=seed_topics, seed_confidence=seed_confidence)
