@@ -20,8 +20,10 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import confusion_matrix
 from sklearn import svm
 from sklearn.decomposition import PCA
+import csv as csv
 
 from parameters import Parameters
+import os
 
 MAX_DOCUMENT_LENGTH = 300
 EMBEDDING_SIZE = 5
@@ -89,11 +91,11 @@ for data in test_dataloader:
 x_train = np.array(x_train).reshape(len(x_train), MAX_DOCUMENT_LENGTH)
 x_test = np.array(x_test).reshape(len(x_test), MAX_DOCUMENT_LENGTH)
 
-pca = PCA(n_components=10, whiten=True)
-pca = pca.fit(x_train)
-print('Explained variance percentage = %0.2f' % sum(pca.explained_variance_ratio_))
-x_train = pca.transform(x_train)
-x_test = pca.transform(x_test)
+# pca = PCA(n_components=10, whiten=True)
+# pca = pca.fit(x_train)
+# print('Explained variance percentage = %0.2f' % sum(pca.explained_variance_ratio_))
+# x_train = pca.transform(x_train)
+# x_test = pca.transform(x_test)
 
 print("Train size: ", x_train.shape)
 print("Test size: ", x_test.shape)
@@ -141,12 +143,29 @@ cnf_matrix = confusion_matrix(f1_truelabels, f1_predictions)
 print(cnf_matrix)
 #print(predictions)
 
+for data in test_dataloader:
+    x_test = data['clean_text']
+    x_tweets = data['text']
+    y_test = np.array(data['cluster_label'])
+    break
+
+x_test = np.array(x_test).reshape(len(x_test), MAX_DOCUMENT_LENGTH)
+predictions = oc_svm_clf.predict(x_test)
+predictions = [0 if prediction < 1 else 1 for prediction in predictions]
 
 parameters.add_parameter("Test Statistics", "Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
 parameters.add_parameter("Test Confusion matrix", cnf_matrix)
 exports_folder = 'data/exports/'
 timestamp = time.strftime("%Y%m%d-%H%M%S")
 parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
+
+results_filename = "classification_results_" + timestamp + "_TestF1_{:.4}".format(f1score)+".csv"
+filepath = os.path.join(exports_folder, results_filename)
+with open(filepath,'w') as out:
+    csv_out=csv.writer(out, delimiter = ',')
+    csv_out.writerow(['Predicted' , 'Truth' ,'Text'])
+    for i in range(len(predictions)):
+        csv_out.writerow([predictions[i], y_test[i].data[0], x_tweets[i]])
 
 
 
