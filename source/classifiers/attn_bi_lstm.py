@@ -32,7 +32,7 @@ KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 20
+epochs = 1
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 parameters = Parameters()
@@ -53,7 +53,7 @@ x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.
 
 datafolder = 'data/classification_data/Training Data/823'
 exports_folder = 'data/exports/'
-training_fileName = 'training.csv'
+training_fileName = 'training_0.15.csv'
 test_fileName = 'test.csv'
 parameters.add_parameter("Training filename", training_fileName)
 parameters.add_parameter("Test filename", test_fileName)
@@ -68,6 +68,9 @@ training_tweets = []
 tweets_dict = set()
 sentence_vectors = []
 test_tweets = []
+X_TEST = []
+TEST_TWEETS = []
+Y_TEST = []
 
 def to_one_hot(y, n_class):
     return np.eye(n_class)[y]
@@ -78,10 +81,12 @@ for data in training_dataloader:
     break
 
 for data in test_dataloader:
-    x_test = data['clean_text']
-    test_tweets = data['text']
+    X_TEST = x_test = data['clean_text']
+    TEST_TWEETS = test_tweets = data['text']
+    Y_TEST = data['cluster_label']
     y_test = to_one_hot(data['cluster_label'],MAX_LABEL)
     break
+
 
 
 
@@ -95,6 +100,9 @@ print(vocab_size)
 x_test, x_dev, y_test, y_dev, dev_size, test_size, dev_tweets, test_tweets = \
     split_dataset(x_test, y_test, 0.1, test_tweets)
 print("Validation size: ", dev_size)
+
+#print(Y_TEST[0+dev_size:10+dev_size])
+#print(y_test[0:10])
 
 print(x_train[0,:])
 print(x_test[0,:])
@@ -139,7 +147,7 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    probability_penalty = 0.5
+    probability_penalty = 0.2
     modified_y_hat = tf.nn.softmax(y_hat)[:,1] - probability_penalty
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
     parameters.add_parameter("Optimizing Logit Variable", "y_hat")
@@ -223,6 +231,8 @@ with tf.Session(graph=graph) as sess:
     #     y_test = to_one_hot(data['cluster_label'],MAX_LABEL)
     #     break
 
+    # x_train, x_test, vocab, vocab_size = \
+    # data_preprocessing(x_train, X_TEST, MAX_DOCUMENT_LENGTH)
     fd = {batch_x: x_test, batch_y: y_test, keep_prob: 1.0}
     acc, predictions = sess.run([accuracy, prediction], feed_dict=fd)
 
@@ -254,7 +264,8 @@ with tf.Session(graph=graph) as sess:
         csv_out=csv.writer(out, delimiter = ',')
         csv_out.writerow(['Predicted' , 'Truth' ,'Text'])
         for i in range(len(predictions)):
-            csv_out.writerow([predictions[i], y_test[i].data[0], test_tweets[i]])
+            #print([f1_predictions[i], f1_truelabels[i], test_tweets[i]])
+            csv_out.writerow([f1_predictions[i], f1_truelabels[i], test_tweets[i]])
 
 
 
