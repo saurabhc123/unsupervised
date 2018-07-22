@@ -28,7 +28,7 @@ class TweetBasicDataSet(Dataset):
             cluster_label = int(row[0])
             tweet_text = clean_text = row[1]
             if len(row) > 2:
-                tweet_text = row[2]
+                tweet_text = row[2]#' '.join(row[2:])
             else:
                 tweet_text =  clean_text
         except:

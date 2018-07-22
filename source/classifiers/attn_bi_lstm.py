@@ -32,7 +32,7 @@ KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 1
+epochs = 150
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 parameters = Parameters()
@@ -147,7 +147,7 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    probability_penalty = 0.2
+    probability_penalty = 0.5
     modified_y_hat = tf.nn.softmax(y_hat)[:,1] - probability_penalty
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
     parameters.add_parameter("Optimizing Logit Variable", "y_hat")
@@ -234,7 +234,7 @@ with tf.Session(graph=graph) as sess:
     # x_train, x_test, vocab, vocab_size = \
     # data_preprocessing(x_train, X_TEST, MAX_DOCUMENT_LENGTH)
     fd = {batch_x: x_test, batch_y: y_test, keep_prob: 1.0}
-    acc, predictions = sess.run([accuracy, prediction], feed_dict=fd)
+    acc, predictions, probabilities = sess.run([accuracy, prediction, resultant_y_hat], feed_dict=fd)
 
     print("Test accuracy : %f %%" % ( acc))
     f1_predictions = np.array(predictions)
@@ -265,7 +265,7 @@ with tf.Session(graph=graph) as sess:
         csv_out.writerow(['Predicted' , 'Truth' ,'Text'])
         for i in range(len(predictions)):
             #print([f1_predictions[i], f1_truelabels[i], test_tweets[i]])
-            csv_out.writerow([f1_predictions[i], f1_truelabels[i], test_tweets[i]])
+            csv_out.writerow([f1_predictions[i], f1_truelabels[i],probabilities[i][0],probabilities[i][1] , test_tweets[i]])
 
 
 
