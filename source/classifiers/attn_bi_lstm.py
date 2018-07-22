@@ -19,6 +19,8 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import confusion_matrix
 
 from parameters import Parameters
+import os
+import csv
 
 MAX_DOCUMENT_LENGTH = 10
 EMBEDDING_SIZE = 5
@@ -30,10 +32,11 @@ KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 100
+epochs = 20
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 parameters = Parameters()
+parameters.add_parameter("METHOD", "BI-LSTM")
 parameters.add_parameter("MAX_DOCUMENT_LENGTH", MAX_DOCUMENT_LENGTH)
 parameters.add_parameter("EMBEDDING_SIZE",EMBEDDING_SIZE)
 parameters.add_parameter("HIDDEN_SIZE",HIDDEN_SIZE)
@@ -50,7 +53,7 @@ x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.
 
 datafolder = 'data/classification_data/Training Data/823'
 exports_folder = 'data/exports/'
-training_fileName = 'training_0.15.csv'
+training_fileName = 'training.csv'
 test_fileName = 'test.csv'
 parameters.add_parameter("Training filename", training_fileName)
 parameters.add_parameter("Test filename", test_fileName)
@@ -64,6 +67,7 @@ test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset.data))
 training_tweets = []
 tweets_dict = set()
 sentence_vectors = []
+test_tweets = []
 
 def to_one_hot(y, n_class):
     return np.eye(n_class)[y]
@@ -75,6 +79,7 @@ for data in training_dataloader:
 
 for data in test_dataloader:
     x_test = data['clean_text']
+    test_tweets = data['text']
     y_test = to_one_hot(data['cluster_label'],MAX_LABEL)
     break
 
@@ -87,12 +92,14 @@ x_train, x_test, vocab, vocab_size = \
 print(vocab_size)
 
 # split dataset to test and dev
-x_test, x_dev, y_test, y_dev, dev_size, test_size = \
-    split_dataset(x_test, y_test, 0.1)
+x_test, x_dev, y_test, y_dev, dev_size, test_size, dev_tweets, test_tweets = \
+    split_dataset(x_test, y_test, 0.1, test_tweets)
 print("Validation size: ", dev_size)
 
 print(x_train[0,:])
 print(x_test[0,:])
+print(test_tweets[0])
+
 
 graph = tf.Graph()
 with graph.as_default():
@@ -132,7 +139,7 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    probability_penalty = 0.6
+    probability_penalty = 0.5
     modified_y_hat = tf.nn.softmax(y_hat)[:,1] - probability_penalty
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
     parameters.add_parameter("Optimizing Logit Variable", "y_hat")
@@ -207,9 +214,17 @@ with tf.Session(graph=graph) as sess:
     #         labels.append(y_batch)
     #         test_acc += acc
     #         cnt += 1
+
+
+    # test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset.data))
+    # for data in test_dataloader:
+    #     x_test = data['clean_text']
+    #     x_tweets = data['text']
+    #     y_test = to_one_hot(data['cluster_label'],MAX_LABEL)
+    #     break
+
     fd = {batch_x: x_test, batch_y: y_test, keep_prob: 1.0}
     acc, predictions = sess.run([accuracy, prediction], feed_dict=fd)
-
 
     print("Test accuracy : %f %%" % ( acc))
     f1_predictions = np.array(predictions)
@@ -230,6 +245,16 @@ with tf.Session(graph=graph) as sess:
     exports_folder = 'data/exports/'
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
+
+
+
+    results_filename = "classification_results_" + timestamp + "_TestF1_{:.4}".format(f1score)+".csv"
+    filepath = os.path.join(exports_folder, results_filename)
+    with open(filepath,'w') as out:
+        csv_out=csv.writer(out, delimiter = ',')
+        csv_out.writerow(['Predicted' , 'Truth' ,'Text'])
+        for i in range(len(predictions)):
+            csv_out.writerow([predictions[i], y_test[i].data[0], test_tweets[i]])
 
 
 

@@ -56,7 +56,7 @@ parameters.add_parameter("epochs",epochs)
 x_train, y_train = ([],[])#load_data("data/classification_data/Training Data/train.csv", names=["Label", "clean_text", "tweet_text"])
 x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.csv")
 
-datafolder = 'data/classification_data/Training Data'
+datafolder = 'data/classification_data/Training Data/823'
 exports_folder = 'data/exports/'
 training_fileName = 'training_one_class.csv'
 test_fileName = 'test.csv'
@@ -100,12 +100,12 @@ x_test = np.array(x_test).reshape(len(x_test), MAX_DOCUMENT_LENGTH)
 print("Train size: ", x_train.shape)
 print("Test size: ", x_test.shape)
 # split dataset to test and dev
-x_test, x_dev, y_test, y_dev, dev_size, test_size = \
+x_test, x_dev, y_test, y_dev, dev_size, test_size,_,_ = \
     split_dataset(x_test, y_test, 0.1)
 print("Validation size: ", dev_size)
 
-gamma_values = [1.0,0.1,0.01,0.001, 0.0001, 0.0001]
-nu_values = [0.05,0.08, 0.1, 0.2, 0.25, 0.3]
+gamma_values = [3.5,3.0,2.5,2.0,1.5,1.0,0.1,0.01,0.001, 0.0001, 0.0001]
+nu_values = [0.05,0.08, 0.1, 0.2, 0.25, 0.3,0.5, 0.7]
 
 best_f1_validation = 0.0
 best_model = []
@@ -143,6 +143,14 @@ cnf_matrix = confusion_matrix(f1_truelabels, f1_predictions)
 print(cnf_matrix)
 #print(predictions)
 
+
+
+parameters.add_parameter("Test Statistics", "Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+parameters.add_parameter("Test Confusion matrix", cnf_matrix)
+exports_folder = 'data/exports/'
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
+
 for data in test_dataloader:
     x_test = data['clean_text']
     x_tweets = data['text']
@@ -152,12 +160,6 @@ for data in test_dataloader:
 x_test = np.array(x_test).reshape(len(x_test), MAX_DOCUMENT_LENGTH)
 predictions = oc_svm_clf.predict(x_test)
 predictions = [0 if prediction < 1 else 1 for prediction in predictions]
-
-parameters.add_parameter("Test Statistics", "Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
-parameters.add_parameter("Test Confusion matrix", cnf_matrix)
-exports_folder = 'data/exports/'
-timestamp = time.strftime("%Y%m%d-%H%M%S")
-parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
 
 results_filename = "classification_results_" + timestamp + "_TestF1_{:.4}".format(f1score)+".csv"
 filepath = os.path.join(exports_folder, results_filename)

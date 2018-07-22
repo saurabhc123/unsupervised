@@ -35,7 +35,7 @@ def data_preprocessing(train, test, max_len):
     return x_train, x_test, vocab, vocab_size
 
 
-def split_dataset(x_test, y_test, dev_ratio):
+def split_dataset(x_test, y_test, dev_ratio, text_tweets = None):
     '''split test dataset to test and dev set with ratio '''
     test_size = len(x_test)
     print(test_size)
@@ -45,7 +45,12 @@ def split_dataset(x_test, y_test, dev_ratio):
     x_test = x_test[dev_size:]
     y_dev = y_test[:dev_size]
     y_test = y_test[dev_size:]
-    return x_test, x_dev, y_test, y_dev, dev_size, test_size - dev_size
+    dev_tweets =[]
+    test_tweets = []
+    if test_tweets is not None:
+        dev_tweets = text_tweets[:dev_size]
+        test_tweets = text_tweets[dev_size:]
+    return x_test, x_dev, y_test, y_dev, dev_size, test_size - dev_size, dev_tweets, test_tweets
 
 
 def fill_feed_dict(data_X, data_Y, batch_size):
