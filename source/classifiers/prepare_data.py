@@ -47,7 +47,7 @@ def split_dataset(x_test, y_test, dev_ratio, text_tweets = None):
     y_test = y_test[dev_size:]
     dev_tweets =[]
     test_tweets = []
-    if test_tweets is not None:
+    if text_tweets is not None:
         dev_tweets = text_tweets[:dev_size]
         test_tweets = text_tweets[dev_size:]
     return x_test, x_dev, y_test, y_dev, dev_size, test_size - dev_size, dev_tweets, test_tweets

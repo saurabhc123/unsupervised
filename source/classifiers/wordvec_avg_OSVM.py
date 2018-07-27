@@ -58,7 +58,7 @@ x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.
 
 datafolder = 'data/classification_data/Training Data/823'
 exports_folder = 'data/exports/'
-training_fileName = 'training_one_class.csv'
+training_fileName = 'training.csv'
 test_fileName = 'test.csv'
 parameters.add_parameter("Training filename", training_fileName)
 parameters.add_parameter("Test filename", test_fileName)
@@ -144,9 +144,10 @@ print(cnf_matrix)
 #print(predictions)
 
 
-
+parameters.add_parameter("Collection Info",datafolder)
 parameters.add_parameter("Test Statistics", "Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
 parameters.add_parameter("Test Confusion matrix", cnf_matrix)
+
 exports_folder = 'data/exports/'
 timestamp = time.strftime("%Y%m%d-%H%M%S")
 parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
@@ -160,14 +161,14 @@ for data in test_dataloader:
 x_test = np.array(x_test).reshape(len(x_test), MAX_DOCUMENT_LENGTH)
 predictions = oc_svm_clf.predict(x_test)
 predictions = [0 if prediction < 1 else 1 for prediction in predictions]
-
+true_labels = np.argmax(y_test, 1)
 results_filename = "classification_results_" + timestamp + "_TestF1_{:.4}".format(f1score)+".csv"
 filepath = os.path.join(exports_folder, results_filename)
 with open(filepath,'w') as out:
     csv_out=csv.writer(out, delimiter = ',')
     csv_out.writerow(['Predicted' , 'Truth' ,'Text'])
     for i in range(len(predictions)):
-        csv_out.writerow([predictions[i], y_test[i].data[0], x_tweets[i]])
+        csv_out.writerow([predictions[i], true_labels[i], x_tweets[i]])
 
 
 

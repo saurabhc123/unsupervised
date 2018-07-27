@@ -19,23 +19,27 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import confusion_matrix
 
+import os
+import csv
+
 from parameters import Parameters
 
 MAX_DOCUMENT_LENGTH = 300
 EMBEDDING_SIZE = 5
-HIDDEN_SIZE1 = 4
-HIDDEN_SIZE2 = 4
+HIDDEN_SIZE1 = 2
+HIDDEN_SIZE2 = 2
 ATTENTION_SIZE = 2
-lr = 1e-4
+lr = 1e-3
 BATCH_SIZE = 256
 KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 200
+epochs = 80
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 parameters = Parameters()
+parameters.add_parameter("METHOD", "AVG-Word2Vec")
 parameters.add_parameter("MAX_DOCUMENT_LENGTH", MAX_DOCUMENT_LENGTH)
 parameters.add_parameter("EMBEDDING_SIZE",EMBEDDING_SIZE)
 parameters.add_parameter("HIDDEN_SIZE1",HIDDEN_SIZE1)
@@ -53,7 +57,7 @@ x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.
 
 datafolder = 'data/classification_data/Training Data/823'
 exports_folder = 'data/exports/'
-training_fileName = 'training_0.15.csv'
+training_fileName = 'training_0.15_with_10k.csv'
 test_fileName = 'test.csv'
 parameters.add_parameter("Training filename", training_fileName)
 parameters.add_parameter("Test filename", test_fileName)
@@ -68,27 +72,39 @@ test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset.data))
 training_tweets = []
 tweets_dict = set()
 sentence_vectors = []
-
+test_tweets = []
+X_TEST = []
+TEST_TWEETS = []
+Y_TEST = []
 
 def to_one_hot(y, n_class):
     return np.eye(n_class)[y]
 
 for data in training_dataloader:
     x_train = data['clean_text']
-    y_train = to_one_hot(data['cluster_label'], MAX_LABEL)
+    y_train = to_one_hot(data['cluster_label'],MAX_LABEL)
     break
 
 for data in test_dataloader:
-    x_test = data['clean_text']
-    y_test = to_one_hot(data['cluster_label'], MAX_LABEL)
+    X_TEST = x_test = data['clean_text']
+    TEST_TWEETS = test_tweets = data['text']
+    Y_TEST = data['cluster_label']
+    y_test = to_one_hot(data['cluster_label'],MAX_LABEL)
     break
 
 print("Train size: ", len(x_train))
 print("Test size: ", len(x_test))
 # split dataset to test and dev
-x_test, x_dev, y_test, y_dev, dev_size, test_size = \
-    split_dataset(x_test, y_test, 0.1)
+x_test, x_dev, y_test, y_dev, dev_size, test_size, dev_tweets, test_tweets = \
+    split_dataset(x_test, y_test, 0.1, test_tweets)
 print("Validation size: ", dev_size)
+
+#print(Y_TEST[0+dev_size:10+dev_size])
+#print(y_test[0:10])
+
+print(x_train[0,:])
+print(x_test[0,:])
+print(test_tweets[0])
 
 graph = tf.Graph()
 with graph.as_default():
@@ -120,11 +136,11 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    probability_penalty = 0.6
+    probability_penalty = 0.8
     modified_y_hat = tf.nn.softmax(y_hat)[:,1] - probability_penalty
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
-    parameters.add_parameter("Optimizing Logit Variable", "resultant_y_hat")
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=resultant_y_hat, labels=batch_y))
+    parameters.add_parameter("Optimizing Logit Variable", "y_hat")
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
     # Accuracy metric
@@ -199,7 +215,7 @@ with tf.Session(graph=graph) as sess:
     #         test_acc += acc
     #         cnt += 1
     fd = {batch_x: x_test.reshape(len(x_test), MAX_DOCUMENT_LENGTH), batch_y: y_test, keep_prob: 1.0}
-    acc, predictions = sess.run([accuracy, prediction], feed_dict=fd)
+    acc, predictions, probabilities = sess.run([accuracy, prediction, resultant_y_hat], feed_dict=fd)
 
 
     print("Test accuracy : %f %%" % ( acc))
@@ -221,6 +237,15 @@ with tf.Session(graph=graph) as sess:
     exports_folder = 'data/exports/'
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
+
+    results_filename = "classification_results_" + timestamp + "_TestF1_{:.4}".format(f1score)+".csv"
+    filepath = os.path.join(exports_folder, results_filename)
+    with open(filepath,'w') as out:
+        csv_out=csv.writer(out, delimiter = ',')
+        csv_out.writerow(['Predicted' , 'Truth' ,'Text'])
+        for i in range(len(predictions)):
+            #print([f1_predictions[i], f1_truelabels[i], test_tweets[i]])
+            csv_out.writerow([f1_predictions[i], f1_truelabels[i],probabilities[i][0],probabilities[i][1] , test_tweets[i]])
 
 
 
