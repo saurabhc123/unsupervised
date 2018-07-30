@@ -65,7 +65,8 @@ class Baseline_Subcluster_Similarity_Experiment(SubclusterSimilarityExperiment):
 
 
 
-total_clusters = 10
+total_clusters = 50
+#self.parameters.add_parameter("total_clusters", total_clusters)
 # for i in range(experiment_count):
 #     eps = eps*10
 #
