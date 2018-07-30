@@ -26,13 +26,13 @@ MAX_DOCUMENT_LENGTH = 10
 EMBEDDING_SIZE = 2
 HIDDEN_SIZE = 4
 ATTENTION_SIZE = 3
-lr = 1e-4
+lr = 1e-3
 BATCH_SIZE = 256
 KEEP_PROB = 0.5
 LAMBDA = 0.0001
 
 MAX_LABEL = 2
-epochs = 45
+epochs = 100
 
 #dbpedia = tf.contrib.learn.datasets.load_dataset('dbpedia')
 parameters = Parameters()
@@ -51,10 +51,11 @@ parameters.add_parameter("epochs",epochs)
 x_train, y_train = ([],[])#load_data("data/classification_data/Training Data/train.csv", names=["Label", "clean_text", "tweet_text"])
 x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.csv")
 
-datafolder = 'data/classification_data/Training Data/823'
+datafolder = 'data/classification_data/Training Data/41'
 exports_folder = 'data/exports/'
-training_fileName = 'training_0.15_with_10k.csv'
+training_fileName = 'training_Guided_LDA_0.25.csv'
 test_fileName = 'test.csv'
+parameters.add_parameter("Data Folder", datafolder)
 parameters.add_parameter("Training filename", training_fileName)
 parameters.add_parameter("Test filename", test_fileName)
 pre_processor = NoiseRemover()
@@ -147,11 +148,11 @@ with graph.as_default():
 
     # y_hat = tf.squeeze(y_hat)
     #y_hat = tf.subtract(y_hat[:,1],np.ones(y_hat[:,1].shape)*0.05)
-    probability_penalty = 0.8
+    probability_penalty = 0.75
     modified_y_hat = tf.nn.softmax(y_hat)[:,1] - probability_penalty
     resultant_y_hat = tf.stack([tf.nn.softmax(y_hat)[:,0],modified_y_hat],axis=1)
-    parameters.add_parameter("Optimizing Logit Variable", "y_hat")
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_hat, labels=batch_y))
+    parameters.add_parameter("Optimizing Logit Variable", "resultant_y_hat")
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=resultant_y_hat, labels=batch_y))
     optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
     # Accuracy metric
@@ -202,13 +203,13 @@ with tf.Session(graph=graph) as sess:
         f1score = f1_score(f1_truelabels, f1_predictions, average='macro')
         precision = precision_score(f1_truelabels, f1_predictions, average='macro')
         recall = recall_score(f1_truelabels, f1_predictions, average='macro')
-        print("Validation Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+        print("Validation Precision:{:.2} Recall:{:.2} F1:{:.2}".format(precision, recall, f1score))
         cnf_matrix = confusion_matrix(f1_truelabels[0,:], f1_predictions[0,:])
 
         print(cnf_matrix)
 
 
-    parameters.add_parameter("Validation Statistics" ,"Precision:{} Recall:{} F1:{} {}"
+    parameters.add_parameter("Validation Statistics" ,"Precision:{:.2} Recall:{:.2} F1:{:.2} {}"
                              .format(precision, recall, f1score, val_acc_loss))
     parameters.add_parameter("Validation Confusion matrix", cnf_matrix)
     print("Training finished, time consumed : ", time.time() - start, " s")
@@ -244,21 +245,21 @@ with tf.Session(graph=graph) as sess:
     f1score = f1_score(f1_truelabels, f1_predictions, average='macro')
     precision = precision_score(f1_truelabels, f1_predictions, average='macro')
     recall = recall_score(f1_truelabels, f1_predictions, average='macro')
-    print("Test Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+    print("Test Precision:{:.2} Recall:{:.2} F1:{:.2}".format(precision, recall, f1score))
     cnf_matrix = confusion_matrix(f1_truelabels, f1_predictions)
     print(cnf_matrix)
     #print(predictions)
 
     parameters.add_parameter("probability_penalty", probability_penalty)
-    parameters.add_parameter("Test Statistics", "Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+    parameters.add_parameter("Test Statistics", "Precision:{:.2} Recall:{:.2} F1:{:.2}".format(precision, recall, f1score))
     parameters.add_parameter("Test Confusion matrix", cnf_matrix)
     exports_folder = 'data/exports/'
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
+    parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.2}".format(f1score))
 
 
-
-    results_filename = "classification_results_" + timestamp + "_TestF1_{:.4}".format(f1score)+".csv"
+    print("Identifier:{}".format(timestamp))
+    results_filename = "classification_results_" + timestamp + "_TestF1_{:.2}".format(f1score)+".csv"
     filepath = os.path.join(exports_folder, results_filename)
     with open(filepath,'w') as out:
         csv_out=csv.writer(out, delimiter = ',')

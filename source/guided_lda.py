@@ -37,7 +37,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 datafolder = 'data/classification_data/'
 exports_folder = 'data/exports/'
-fileName = 'Dataset_z_823_tweets.json'
+fileName = 'Dataset_z_41_tweets.json'
 
 # fileName = 'junk.json'
 filepath = os.path.join(datafolder, fileName)
@@ -132,34 +132,19 @@ for text in texts:
 print("Doc-term matrix shape:", doc_term_matrix.shape)
 X = doc_term_matrix
 
-seed_topic_list = [['nightclub', 'shoot', 'victim', 'survivor'],
-                   ['nightclub', 'shoot', 'mass'],
-                   ['nightclub', 'shoot', 'gay'],
-                   ['nightclub', 'shoot', 'police'],
-                   ['nightclub', 'shoot', 'gunman', 'massacre', 'mass'],
-                   ['nightclub', 'shoot', 'tribute', 'memorial'],
-                   ['nightclub', 'shoot', 'victim', 'area', 'kill', 'dead','deadly','attack'],
-                   ['orlando', 'nightclub', 'victim', 'survivor'],
-                   ['orlando', 'nightclub', 'mass'],
-                   ['orlando', 'nightclub', 'gay'],
-                   ['orlando', 'nightclub', 'police'],
-                   ['orlando', 'nightclub', 'gunman', 'massacre', 'mass'],
-                   ['orlando', 'nightclub', 'tribute', 'memorial'],
-                   ['orlando', 'nightclub', 'victim', 'area', 'kill', 'dead','deadly','attack'],
-                   ['pulse', 'nightclub', 'victim', 'survivor'],
-                   ['pulse', 'nightclub','mass'],
-                   ['pulse', 'nightclub','gay'],
-                   ['pulse', 'nightclub','police'],
-                   ['pulse', 'nightclub','gunman', 'massacre', 'mass'],
-                   ['pulse', 'nightclub','tribute', 'memorial'],
-                   ['pulse', 'nightclub','victim', 'area', 'kill', 'dead','deadly','attack'],
-                   ['mass', 'shoot', 'victim', 'survivor'],
-                   ['mass'],
-                   ['gay'],
-                   ['mass', 'shoot', 'police'],
-                   ['mass', 'shoot', 'gunman', 'massacre'],
-                   ['mass', 'shoot', 'tribute', 'memorial'],
-                   ['mass', 'shoot', 'victim', 'area', 'kill', 'dead','deadly','attack']
+seed_topic_list = [['help', 'victim','newtown', 'family'],
+                   ['mass', 'newtown'],
+                   ['tribute','vigil','picket','baptist','church'],
+                   ['victim', 'tragedy', 'mourn', 'rip','innocent','sad','child'],
+                   ['fund', 'donate', 'pour', 'raise'],
+                   ['family', 'prayer', 'heart', 'silence','lose','child','parent'],
+                   ['month', 'anniversary', 'commemorate', 'remembrance', 'since', 'year'],
+                   ['nra', 'gun', 'control', 'arm', 'stop', 'good', 'bad', 'guard'],
+                   ['hold', 'funeral'],
+                   ['obama', 'president', 'speech', 'speak', 'barrack'],
+                   ['kill', 'massacre', 'die', 'child','dead','death','include'],
+                   ['survivor', 'sue'],
+                   ['fake','shit']
                    ]
 
 seed_topics = {}
@@ -172,7 +157,7 @@ for t_id, st in enumerate(seed_topic_list):
             pass
 
 seed_confidence=0.25
-n_topics=146
+n_topics=122
 n_iter=200
 model = guidedlda.GuidedLDA(n_topics=n_topics, n_iter=n_iter, random_state=7, refresh=20)
 model.fit(X,seed_topics=seed_topics, seed_confidence=seed_confidence)

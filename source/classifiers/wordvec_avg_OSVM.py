@@ -56,10 +56,11 @@ parameters.add_parameter("epochs",epochs)
 x_train, y_train = ([],[])#load_data("data/classification_data/Training Data/train.csv", names=["Label", "clean_text", "tweet_text"])
 x_test, y_test = ([],[])#load_data("data/classification_data/Training Data/test.csv")
 
-datafolder = 'data/classification_data/Training Data/823'
+datafolder = 'data/classification_data/Training Data/1045'
 exports_folder = 'data/exports/'
-training_fileName = 'training.csv'
+training_fileName = 'training_OSVM-100.csv'
 test_fileName = 'test.csv'
+parameters.add_parameter("Data Folder", datafolder)
 parameters.add_parameter("Training filename", training_fileName)
 parameters.add_parameter("Test filename", test_fileName)
 pre_processor = NoiseRemover()
@@ -119,11 +120,11 @@ for gamma in gamma_values:
         f1_predictions = np.array(predictions)
         f1_truelabels = np.argmax(y_dev, 1)
         f1score = f1_score(f1_truelabels, f1_predictions, average='macro')
-        print("Validation F1:{} achieved for gamma:{} and nu:{}.".format(f1score, gamma, nu))
+        print("Validation F1:{:.2} achieved for gamma:{:.2} and nu:{:.2}.".format(f1score, gamma, nu))
         if f1score > best_f1_validation:
             best_f1_validation = f1score
             best_model = oc_svm_clf
-            print("Best validation F1:{} achieved for gamma:{} and nu:{}".format(f1score, gamma, nu))
+            print("Best validation F1:{:.2} achieved for gamma:{:.2} and nu:{:.2}".format(f1score, gamma, nu))
 
 
 oc_svm_clf = best_model
@@ -138,19 +139,19 @@ f1_truelabels = np.argmax(y_test, 1)
 f1score = f1_score(f1_truelabels, f1_predictions, average='macro')
 precision = precision_score(f1_truelabels, f1_predictions, average='macro')
 recall = recall_score(f1_truelabels, f1_predictions, average='macro')
-print("Test Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+print("Test results:\n Precision:{:.2}\n Recall:{:.2}\n F1:{:.2}".format(precision, recall, f1score))
 cnf_matrix = confusion_matrix(f1_truelabels, f1_predictions)
 print(cnf_matrix)
 #print(predictions)
 
 
 parameters.add_parameter("Collection Info",datafolder)
-parameters.add_parameter("Test Statistics", "Precision:{} Recall:{} F1:{}".format(precision, recall, f1score))
+parameters.add_parameter("Test Statistics", "Precision:{:.2} Recall:{:.2} F1:{:.2}".format(precision, recall, f1score))
 parameters.add_parameter("Test Confusion matrix", cnf_matrix)
 
 exports_folder = 'data/exports/'
 timestamp = time.strftime("%Y%m%d-%H%M%S")
-parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.4}".format(f1score))
+parameters.write_parameters(exports_folder, timestamp+"_TestF1_{:.2}".format(f1score))
 
 for data in test_dataloader:
     x_test = data['clean_text']
@@ -161,14 +162,14 @@ for data in test_dataloader:
 x_test = np.array(x_test).reshape(len(x_test), MAX_DOCUMENT_LENGTH)
 predictions = oc_svm_clf.predict(x_test)
 predictions = [0 if prediction < 1 else 1 for prediction in predictions]
-true_labels = np.argmax(y_test, 1)
-results_filename = "classification_results_" + timestamp + "_TestF1_{:.4}".format(f1score)+".csv"
+#true_labels = np.argmax(y_test, 1)
+results_filename = "classification_results_" + timestamp + "_TestF1_{:.2}".format(f1score)+".csv"
 filepath = os.path.join(exports_folder, results_filename)
 with open(filepath,'w') as out:
     csv_out=csv.writer(out, delimiter = ',')
     csv_out.writerow(['Predicted' , 'Truth' ,'Text'])
     for i in range(len(predictions)):
-        csv_out.writerow([predictions[i], true_labels[i], x_tweets[i]])
+        csv_out.writerow([predictions[i], y_test[i], x_tweets[i]])
 
 
 

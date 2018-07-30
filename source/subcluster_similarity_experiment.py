@@ -66,9 +66,10 @@ class SubclusterSimilarityExperiment():
                 if(tweet.label <= min_similarity):
                     min_similarity = tweet.label
                 i += 1
-        print("Max similarity:{} , Min similarity:{}".format(max_similarity, min_similarity))
-
-        threshold = max_similarity - ((max_similarity - min_similarity)/2)
+        print("Max similarity:{:.2} , Min similarity:{:.2}".format(max_similarity, min_similarity))
+        proportion_denominator = 1
+        self.parameters.add_parameter("proportion_denominator", proportion_denominator)
+        threshold = max_similarity - ((max_similarity - min_similarity)/proportion_denominator)
         sorted_tweets = sorted(tweets, key=lambda tweet: -tweet.label)
         i =0
         with open(self.exports_filepath,'w') as out:
